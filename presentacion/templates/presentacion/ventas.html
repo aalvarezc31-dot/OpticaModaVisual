@@ -1,0 +1,39 @@
+{% extends "presentacion/base.html" %}
+{% block titulo %}Ventas | Óptica Moda Visual{% endblock %}
+{% block contenido %}
+<div class="pagina-cabecera">
+  <div><h1><i class="fa-solid fa-cash-register"></i> Ventas</h1><p class="subtitulo">Pedidos de lentes, monturas y servicios con su cobro y entrega.</p></div>
+  <a class="btn btn-azul" href="{% url 'nueva_venta' %}"><i class="fa-solid fa-cart-plus"></i> Nueva venta</a>
+</div>
+<section class="panel">
+  <form class="busqueda" method="get">
+    <input type="search" name="q" value="{{ busqueda }}" placeholder="No. de venta, cliente, NIT o vendedor">
+    <select name="estado" aria-label="Estado">
+      <option value="">Todos los estados</option>
+      {% for valor, nombre in estados %}<option value="{{ valor }}" {% if estado == valor %}selected{% endif %}>{{ nombre }}</option>{% endfor %}
+    </select>
+    <input type="date" name="fecha" value="{{ fecha|date:'Y-m-d' }}" aria-label="Fecha">
+    <button class="btn btn-azul" type="submit"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+    {% if busqueda or estado or fecha %}<a class="btn" href="{% url 'lista_ventas' %}">Limpiar</a>{% endif %}
+  </form>
+  <div class="tabla-wrap"><table>
+    <thead><tr><th>No.</th><th>Fecha</th><th>Cliente</th><th>Vendedor</th><th>Entrega</th><th>Estado</th><th class="derecha">Total</th></tr></thead>
+    <tbody>
+    {% for venta in pagina %}
+      <tr>
+        <td><a href="{% url 'detalle_venta' venta.id_venta %}"><strong>#{{ venta.id_venta }}</strong></a></td>
+        <td class="nowrap">{{ venta.fecha_venta|date:"d/m/Y H:i" }}</td>
+        <td>{{ venta.cliente_nombre }}<br><small>NIT {{ venta.cliente_nit }}</small></td>
+        <td>{{ venta.vendedor_nombre }}</td>
+        <td>{{ venta.fecha_entrega_estimada|date:"d/m/Y"|default:"—" }}</td>
+        <td><span class="estado e-{{ venta.estado|lower }}">{{ venta.estado }}</span></td>
+        <td class="derecha nowrap"><strong>Q {{ venta.total|floatformat:2 }}</strong></td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="7" class="vacio"><i class="fa-solid fa-receipt"></i><br>No hay ventas para mostrar.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% include "presentacion/_paginacion.html" %}
+</section>
+{% endblock %}

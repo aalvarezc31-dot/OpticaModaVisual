@@ -1,0 +1,34 @@
+{% extends "presentacion/base.html" %}
+{% block titulo %}Exámenes visuales | Óptica Moda Visual{% endblock %}
+{% block contenido %}
+<div class="pagina-cabecera">
+  <div><h1><i class="fa-solid fa-eye"></i> Exámenes visuales</h1><p class="subtitulo">Historial de exámenes realizados a los pacientes.</p></div>
+  <a class="btn btn-azul" href="{% url 'registrar_examen' %}"><i class="fa-solid fa-circle-plus"></i> Registrar examen</a>
+</div>
+<section class="panel">
+  <form method="get" class="busqueda">
+    <input type="search" name="q" value="{{ busqueda }}" placeholder="Buscar por paciente, diagnóstico, motivo u optometrista">
+    <button class="btn btn-azul" type="submit"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+    {% if busqueda %}<a class="btn" href="{% url 'lista_examenes' %}">Limpiar</a>{% endif %}
+  </form>
+  <div class="tabla-wrap"><table>
+    <thead><tr><th>Fecha</th><th>Paciente</th><th>Optometrista</th><th>Motivo de consulta</th><th>Diagnóstico</th><th>Receta</th><th></th></tr></thead>
+    <tbody>
+    {% for examen, cliente, receta in pagina %}
+      <tr>
+        <td class="nowrap">{{ examen.fecha_examen|date:"d/m/Y H:i" }}</td>
+        <td>{% if cliente %}<a href="{% url 'detalle_cliente' cliente.id_cliente %}">{{ cliente.nombres }} {{ cliente.apellidos }}</a>{% else %}Paciente no disponible{% endif %}</td>
+        <td>{{ examen.optometrista_nombre|default:"No indicado" }}</td>
+        <td>{{ examen.motivo_consulta|default:"—"|truncatechars:50 }}</td>
+        <td>{{ examen.diagnostico|default:"Pendiente"|truncatechars:60 }}</td>
+        <td>{% if receta %}<span class="estado e-activo">Registrada</span>{% else %}<span class="estado e-pendiente">Pendiente</span>{% endif %}</td>
+        <td class="derecha"><a class="btn btn-sm" href="{% url 'detalle_examen' examen.id_examen %}">Ver</a></td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="7" class="vacio">No hay exámenes visuales registrados.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% include "presentacion/_paginacion.html" %}
+</section>
+{% endblock %}

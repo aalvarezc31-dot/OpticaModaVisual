@@ -1,0 +1,42 @@
+{% extends "presentacion/base.html" %}
+{% block titulo %}Proveedores | Óptica Moda Visual{% endblock %}
+{% block contenido %}
+<div class="pagina-cabecera">
+  <div><h1><i class="fa-solid fa-truck"></i> Proveedores</h1><p class="subtitulo">Empresas que surten monturas, lentes y accesorios.</p></div>
+  <a class="btn btn-azul" href="{% url 'registrar_proveedor' %}"><i class="fa-solid fa-circle-plus"></i> Nuevo proveedor</a>
+</div>
+<section class="panel">
+  <form class="busqueda" method="get">
+    <input type="search" name="q" value="{{ busqueda }}" placeholder="Nombre, NIT o contacto">
+    <select name="estado" aria-label="Estado">
+      <option value="activos" {% if estado == 'activos' %}selected{% endif %}>Activos</option>
+      <option value="inactivos" {% if estado == 'inactivos' %}selected{% endif %}>Inactivos</option>
+      <option value="todos" {% if estado == 'todos' %}selected{% endif %}>Todos</option>
+    </select>
+    <button class="btn btn-azul" type="submit"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+  </form>
+  <div class="tabla-wrap"><table>
+    <thead><tr><th>Proveedor</th><th>NIT</th><th>Contacto</th><th>Teléfono</th><th>Correo</th><th></th></tr></thead>
+    <tbody>
+    {% for p in pagina %}
+      <tr>
+        <td><strong>{{ p.nombre }}</strong>{% if not p.activo %} <span class="estado e-inactivo">Inactivo</span>{% endif %}<br><small>{{ p.direccion|default:"" }}</small></td>
+        <td>{{ p.nit }}</td><td>{{ p.contacto|default:"—" }}</td><td>{{ p.telefono|default:"—" }}</td><td>{{ p.email|default:"—" }}</td>
+        <td class="derecha">
+          <div class="botones" style="justify-content:flex-end">
+            <a class="btn btn-sm" href="{% url 'editar_proveedor' p.id_proveedor %}" title="Editar"><i class="fa-solid fa-pen"></i></a>
+            <form method="post" action="{% url 'cambiar_activo_proveedor' p.id_proveedor %}">
+              {% csrf_token %}
+              <button class="btn btn-sm {% if p.activo %}btn-peligro{% endif %}" title="{% if p.activo %}Desactivar{% else %}Reactivar{% endif %}"><i class="fa-solid fa-{% if p.activo %}ban{% else %}check{% endif %}"></i></button>
+            </form>
+          </div>
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="6" class="vacio">No hay proveedores registrados.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% include "presentacion/_paginacion.html" %}
+</section>
+{% endblock %}

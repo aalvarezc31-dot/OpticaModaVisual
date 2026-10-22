@@ -1,0 +1,47 @@
+{% extends "presentacion/base.html" %}
+{% block titulo %}Examen #{{ examen.id_examen }} | Óptica Moda Visual{% endblock %}
+{% block contenido %}
+<div class="pagina-cabecera">
+  <div>
+    <h1><i class="fa-solid fa-eye"></i> Examen visual #{{ examen.id_examen }}</h1>
+    <p class="subtitulo">{{ examen.fecha_examen|date:"d/m/Y H:i" }} ·
+      {% if cliente %}<a href="{% url 'detalle_cliente' cliente.id_cliente %}">{{ cliente.nombres }} {{ cliente.apellidos }}</a>{% endif %}
+      · {{ examen.optometrista_nombre }}</p>
+  </div>
+  <div class="botones">
+    {% if receta %}
+      <a class="btn btn-azul" href="{% url 'ver_receta' receta.id_receta %}"><i class="fa-solid fa-prescription"></i> Ver receta</a>
+    {% else %}
+      <a class="btn btn-azul" href="{% url 'registrar_receta' examen.id_examen %}"><i class="fa-solid fa-circle-plus"></i> Registrar receta</a>
+    {% endif %}
+    <a class="btn" href="{% url 'lista_examenes' %}"><i class="fa-solid fa-arrow-left"></i> Exámenes</a>
+  </div>
+</div>
+
+<div class="grid-2">
+  <section class="panel">
+    <h2><i class="fa-solid fa-stethoscope"></i> Consulta</h2>
+    <dl class="datos">
+      <div style="grid-column:1/-1"><dt>Motivo de consulta</dt><dd>{{ examen.motivo_consulta|default:"—" }}</dd></div>
+      <div style="grid-column:1/-1"><dt>Antecedentes</dt><dd>{{ examen.antecedentes|default:"—"|linebreaksbr }}</dd></div>
+      <div><dt>Cita relacionada</dt><dd>{% if examen.id_cita %}#{{ examen.id_cita }}{% else %}—{% endif %}</dd></div>
+    </dl>
+  </section>
+  <section class="panel">
+    <h2><i class="fa-solid fa-chart-simple"></i> Mediciones</h2>
+    <table>
+      <thead><tr><th></th><th>Ojo derecho (OD)</th><th>Ojo izquierdo (OI)</th></tr></thead>
+      <tbody>
+        <tr><th>Agudeza visual</th><td>{{ examen.agudeza_visual_od|default:"—" }}</td><td>{{ examen.agudeza_visual_oi|default:"—" }}</td></tr>
+        <tr><th>Presión intraocular</th><td>{{ examen.presion_intraocular_od|default:"—" }}</td><td>{{ examen.presion_intraocular_oi|default:"—" }}</td></tr>
+      </tbody>
+    </table>
+  </section>
+</div>
+
+<section class="panel" style="margin-top:20px">
+  <h2><i class="fa-solid fa-notes-medical"></i> Diagnóstico</h2>
+  <p>{{ examen.diagnostico|default:"Pendiente"|linebreaksbr }}</p>
+  {% if examen.observaciones %}<h2 style="margin-top:18px"><i class="fa-solid fa-comment-medical"></i> Observaciones</h2><p>{{ examen.observaciones|linebreaksbr }}</p>{% endif %}
+</section>
+{% endblock %}

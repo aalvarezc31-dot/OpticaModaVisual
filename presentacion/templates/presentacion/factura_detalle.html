@@ -1,0 +1,58 @@
+{% extends "presentacion/base.html" %}
+{% block titulo %}Factura {{ factura.serie }}-{{ factura.numero }} | Óptica Moda Visual{% endblock %}
+{% block contenido %}
+<div class="pagina-cabecera no-imprimir">
+  <div><h1><i class="fa-solid fa-file-invoice-dollar"></i> Factura {{ factura.serie }}-{{ factura.numero }}</h1></div>
+  <div class="botones">
+    <button class="btn btn-azul" type="button" onclick="window.print()"><i class="fa-solid fa-print"></i> Imprimir</button>
+    {% if factura.estado == 'EMITIDA' %}<button class="btn btn-peligro" type="button" data-dialogo="dlgAnular"><i class="fa-solid fa-ban"></i> Anular</button>{% endif %}
+    <a class="btn" href="{% url 'detalle_venta' venta.id_venta %}"><i class="fa-solid fa-receipt"></i> Venta #{{ venta.id_venta }}</a>
+    <a class="btn" href="{% url 'lista_facturas' %}"><i class="fa-solid fa-arrow-left"></i> Facturas</a>
+  </div>
+</div>
+
+{% if factura.estado == 'ANULADA' %}
+<div class="mensaje error"><strong>Factura anulada</strong> el {{ factura.fecha_anulacion|date:"d/m/Y H:i" }}. Motivo: {{ factura.motivo_anulacion }}</div>
+{% endif %}
+
+<section class="panel" style="max-width:900px;margin:auto">
+  <div style="display:flex;justify-content:space-between;gap:15px;flex-wrap:wrap;border-bottom:2px solid var(--azul);padding-bottom:12px;margin-bottom:18px">
+    <div><h2 style="margin:0;color:var(--azul)"><i class="fa-solid fa-eye"></i> Óptica Moda Visual</h2><small class="muted">Factura</small></div>
+    <div class="derecha"><strong>Serie {{ factura.serie }} · No. {{ factura.numero }}</strong><br><small>{{ factura.fecha_emision|date:"d/m/Y H:i" }}</small><br><span class="estado e-{{ factura.estado|lower }}">{{ factura.estado }}</span></div>
+  </div>
+
+  <dl class="datos" style="margin-bottom:18px">
+    <div><dt>Nombre</dt><dd>{{ factura.nombre_receptor }}</dd></div>
+    <div><dt>NIT</dt><dd>{{ factura.nit_receptor }}</dd></div>
+    <div style="grid-column:1/-1"><dt>Dirección</dt><dd>{{ factura.direccion_receptor }}</dd></div>
+  </dl>
+
+  <table>
+    <thead><tr><th>#</th><th>Descripción</th><th class="derecha">Cant.</th><th class="derecha">Precio</th><th class="derecha">Desc.</th><th class="derecha">Total</th></tr></thead>
+    <tbody>
+    {% for l in lineas %}
+      <tr><td>{{ l.linea }}</td><td>{{ l.descripcion }}</td><td class="derecha">{{ l.cantidad }}</td><td class="derecha">Q {{ l.precio_unitario|floatformat:2 }}</td><td class="derecha">Q {{ l.descuento|floatformat:2 }}</td><td class="derecha">Q {{ l.total|floatformat:2 }}</td></tr>
+    {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr><td colspan="5" class="derecha">IVA incluido (12 %)</td><td class="derecha">Q {{ factura.monto_iva|floatformat:2 }}</td></tr>
+      <tr><td colspan="5" class="derecha">TOTAL</td><td class="derecha">Q {{ factura.total|floatformat:2 }}</td></tr>
+    </tfoot>
+  </table>
+</section>
+
+{% if factura.estado == 'EMITIDA' %}
+<dialog id="dlgAnular">
+  <h3><i class="fa-solid fa-ban"></i> Anular factura {{ factura.serie }}-{{ factura.numero }}</h3>
+  <p class="muted">Una factura anulada no puede volver a emitirse para la misma venta.</p>
+  <form method="post" action="{% url 'anular_factura' factura.id_factura %}">
+    {% csrf_token %}
+    <div class="campo"><label for="{{ form_anular.motivo.id_for_label }}">Motivo *</label>{{ form_anular.motivo }}</div>
+    <div class="acciones">
+      <button class="btn btn-peligro" type="submit">Anular factura</button>
+      <button class="btn" type="button" data-cerrar>Volver</button>
+    </div>
+  </form>
+</dialog>
+{% endif %}
+{% endblock %}

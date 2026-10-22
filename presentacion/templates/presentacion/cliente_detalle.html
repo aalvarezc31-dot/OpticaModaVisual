@@ -1,0 +1,101 @@
+{% extends "presentacion/base.html" %}
+{% block titulo %}{{ cliente.nombres }} {{ cliente.apellidos }} | Óptica Moda Visual{% endblock %}
+{% block contenido %}
+<div class="pagina-cabecera">
+  <div>
+    <h1><i class="fa-solid fa-id-card"></i> {{ cliente.nombres }} {{ cliente.apellidos }}</h1>
+    <p class="subtitulo">Cliente #{{ cliente.id_cliente }} · registrado el {{ cliente.fecha_registro|date:"d/m/Y" }}
+      · <span class="estado {% if cliente.activo %}e-activo{% else %}e-inactivo{% endif %}">{% if cliente.activo %}Activo{% else %}Inactivo{% endif %}</span></p>
+  </div>
+  <div class="botones">
+    {% if cliente.activo %}
+    <a class="btn btn-azul" href="{% url 'nueva_venta' %}?cliente={{ cliente.id_cliente }}"><i class="fa-solid fa-cart-plus"></i> Nueva venta</a>
+    <a class="btn" href="{% url 'registrar_cita' %}?cliente={{ cliente.id_cliente }}"><i class="fa-solid fa-calendar-plus"></i> Cita</a>
+    <a class="btn" href="{% url 'registrar_examen' %}?cliente={{ cliente.id_cliente }}"><i class="fa-solid fa-eye"></i> Examen</a>
+    {% endif %}
+    <a class="btn" href="{% url 'editar_cliente' cliente.id_cliente %}"><i class="fa-solid fa-pen"></i> Editar</a>
+    <form method="post" action="{% url 'cambiar_activo_cliente' cliente.id_cliente %}">
+      {% csrf_token %}
+      <button class="btn {% if cliente.activo %}btn-peligro{% endif %}" type="submit">
+        {% if cliente.activo %}<i class="fa-solid fa-user-slash"></i> Desactivar{% else %}<i class="fa-solid fa-user-check"></i> Reactivar{% endif %}
+      </button>
+    </form>
+  </div>
+</div>
+
+{% if resumen %}
+<section class="kpis">
+  <div class="kpi"><small>Exámenes</small><strong>{{ resumen.total_examenes|default:0 }}</strong><small>{% if resumen.ultimo_examen %}Último: {{ resumen.ultimo_examen|date:"d/m/Y" }}{% else %}Sin exámenes{% endif %}</small></div>
+  <div class="kpi"><small>Citas atendidas</small><strong>{{ resumen.citas_atendidas|default:0 }}</strong><small>No asistió: {{ resumen.citas_no_asistidas|default:0 }}</small></div>
+  <div class="kpi"><small>Compras</small><strong>{{ resumen.total_compras|default:0 }}</strong><small>{% if resumen.ultima_compra %}Última: {{ resumen.ultima_compra|date:"d/m/Y" }}{% else %}Sin compras{% endif %}</small></div>
+  <div class="kpi"><small>Monto comprado</small><strong>Q {{ resumen.monto_comprado|default:0|floatformat:2 }}</strong><small>Ventas confirmadas</small></div>
+</section>
+{% endif %}
+
+<div class="grid-2">
+  <section class="panel">
+    <h2><i class="fa-solid fa-address-book"></i> Datos personales</h2>
+    <dl class="datos">
+      <div><dt>DPI</dt><dd>{{ cliente.dpi|default:"—" }}</dd></div>
+      <div><dt>NIT</dt><dd>{{ cliente.nit|default:"—" }}</dd></div>
+      <div><dt>Fecha de nacimiento</dt><dd>{{ cliente.fecha_nacimiento|date:"d/m/Y"|default:"—" }}</dd></div>
+      <div><dt>Género</dt><dd>{% if cliente.genero == 'M' %}Masculino{% elif cliente.genero == 'F' %}Femenino{% elif cliente.genero == 'O' %}Otro{% else %}—{% endif %}</dd></div>
+      <div><dt>Teléfono</dt><dd>{{ cliente.telefono|default:"—" }}</dd></div>
+      <div><dt>Correo</dt><dd>{{ cliente.email|default:"—" }}</dd></div>
+      <div style="grid-column:1/-1"><dt>Dirección</dt><dd>{{ cliente.direccion|default:"—" }}</dd></div>
+    </dl>
+  </section>
+
+  <section class="panel">
+    <h2><i class="fa-solid fa-calendar-check"></i> Últimas citas</h2>
+    <div class="tabla-wrap"><table style="min-width:0">
+      <tbody>
+      {% for cita in citas %}
+        <tr><td>{{ cita.fecha_hora_inicio|date:"d/m/Y H:i" }}</td><td>{{ cita.motivo|default:"—" }}</td><td><span class="estado e-{{ cita.estado|lower }}">{{ cita.estado }}</span></td></tr>
+      {% empty %}
+        <tr><td class="vacio">Sin citas registradas.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  </section>
+</div>
+
+<section class="panel" style="margin-top:20px">
+  <h2><i class="fa-solid fa-eye"></i> Exámenes y recetas</h2>
+  <div class="tabla-wrap"><table>
+    <thead><tr><th>Fecha</th><th>Optometrista</th><th>Diagnóstico</th><th>Receta</th><th></th></tr></thead>
+    <tbody>
+    {% for examen, receta in examenes %}
+      <tr>
+        <td>{{ examen.fecha_examen|date:"d/m/Y" }}</td>
+        <td>{{ examen.optometrista_nombre }}</td>
+        <td>{{ examen.diagnostico|default:"Pendiente"|truncatechars:70 }}</td>
+        <td>{% if receta %}<a href="{% url 'ver_receta' receta.id_receta %}">#{{ receta.id_receta }} · {{ receta.tipo_lente|default:"Ver" }}</a>{% else %}<span class="muted">—</span>{% endif %}</td>
+        <td class="derecha"><a class="btn btn-sm" href="{% url 'detalle_examen' examen.id_examen %}">Ver</a></td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="5" class="vacio">Sin exámenes registrados.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</section>
+
+<section class="panel">
+  <h2><i class="fa-solid fa-cash-register"></i> Últimas ventas</h2>
+  <div class="tabla-wrap"><table>
+    <thead><tr><th>Venta</th><th>Fecha</th><th>Estado</th><th class="derecha">Total</th></tr></thead>
+    <tbody>
+    {% for venta in ventas %}
+      <tr>
+        <td><a href="{% url 'detalle_venta' venta.id_venta %}">#{{ venta.id_venta }}</a></td>
+        <td>{{ venta.fecha_venta|date:"d/m/Y H:i" }}</td>
+        <td><span class="estado e-{{ venta.estado|lower }}">{{ venta.estado }}</span></td>
+        <td class="derecha">Q {{ venta.total|floatformat:2 }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="4" class="vacio">Sin ventas registradas.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</section>
+{% endblock %}

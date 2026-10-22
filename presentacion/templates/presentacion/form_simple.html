@@ -1,0 +1,20 @@
+{% extends "presentacion/base.html" %}
+{% block titulo %}{{ titulo }} | Óptica Moda Visual{% endblock %}
+{% block contenido %}
+<div class="pagina-cabecera">
+  <div>
+    <h1><i class="fa-solid {{ icono|default:'fa-pen' }}"></i> {{ titulo }}</h1>
+    {% if ayuda %}<p class="subtitulo">{{ ayuda }}</p>{% endif %}
+  </div>
+</div>
+<section class="form-panel">
+  <form method="post">
+    {% csrf_token %}
+    {% include "presentacion/_campos.html" %}
+    <div class="acciones">
+      <button class="btn btn-azul" type="submit"><i class="fa-solid fa-floppy-disk"></i> {{ boton|default:"Guardar" }}</button>
+      <a class="btn" href="{% if volver_id %}{% url volver volver_id %}{% else %}{% url volver %}{% endif %}"><i class="fa-solid fa-arrow-left"></i> Volver</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

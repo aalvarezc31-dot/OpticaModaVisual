@@ -1,0 +1,165 @@
+{% extends "presentacion/base.html" %}
+{% block titulo %}Venta #{{ venta.id_venta }} | Óptica Moda Visual{% endblock %}
+{% block contenido %}
+<div class="pagina-cabecera">
+  <div>
+    <h1><i class="fa-solid fa-receipt"></i> Venta #{{ venta.id_venta }} <span class="estado e-{{ venta.estado|lower }}" style="font-size:14px;vertical-align:middle">{{ venta.estado }}</span></h1>
+    <p class="subtitulo">{{ venta.fecha_venta|date:"d/m/Y H:i" }} · Vendedor: {{ venta.vendedor_nombre }}</p>
+  </div>
+  <div class="botones">
+    {% if puede_confirmar %}
+      <form method="post" action="{% url 'confirmar_venta' venta.id_venta %}">{% csrf_token %}
+        <button class="btn btn-verde" type="submit" {% if not lineas %}disabled title="Agrega productos primero"{% endif %}><i class="fa-solid fa-check"></i> Confirmar venta</button>
+      </form>
+    {% endif %}
+    {% if puede_entregar %}
+      <form method="post" action="{% url 'entregar_venta' venta.id_venta %}">{% csrf_token %}
+        <button class="btn btn-verde" type="submit"><i class="fa-solid fa-hand-holding"></i> Marcar entregada</button>
+      </form>
+    {% endif %}
+    {% if puede_facturar %}
+      <a class="btn btn-azul" href="{% url 'emitir_factura' venta.id_venta %}"><i class="fa-solid fa-file-invoice-dollar"></i> Facturar</a>
+    {% elif factura %}
+      <a class="btn" href="{% url 'detalle_factura' factura.id_factura %}"><i class="fa-solid fa-file-invoice"></i> Factura {{ factura.serie }}-{{ factura.numero }}</a>
+    {% endif %}
+    {% if puede_anular %}
+      <button class="btn btn-peligro" type="button" data-dialogo="dlgAnular"><i class="fa-solid fa-ban"></i> Anular</button>
+    {% endif %}
+    <a class="btn" href="{% url 'lista_ventas' %}"><i class="fa-solid fa-arrow-left"></i> Ventas</a>
+  </div>
+</div>
+
+{% if venta.estado == 'PENDIENTE' %}
+<div class="mensaje">Agrega los productos y, cuando el cliente esté de acuerdo, <strong>confirma la venta</strong>: en ese momento se descuenta el inventario y se pueden registrar pagos.</div>
+{% endif %}
+
+<div class="grid-3" style="margin-bottom:20px">
+  <section class="panel">
+    <h2><i class="fa-solid fa-user"></i> Cliente</h2>
+    <dl class="datos" style="grid-template-columns:1fr">
+      <div><dt>Nombre</dt><dd><a href="{% url 'detalle_cliente' venta.id_cliente %}">{{ venta.cliente_nombre }}</a></dd></div>
+      <div><dt>NIT</dt><dd>{{ venta.cliente_nit }}</dd></div>
+      <div><dt>Entrega estimada</dt><dd>{{ venta.fecha_entrega_estimada|date:"d/m/Y"|default:"—" }}</dd></div>
+      {% if receta %}<div><dt>Receta</dt><dd><a href="{% url 'ver_receta' receta.id_receta %}">#{{ receta.id_receta }} · {{ receta.tipo_lente|default:"ver" }}</a></dd></div>{% endif %}
+      {% if venta.observaciones %}<div><dt>Observaciones</dt><dd>{{ venta.observaciones }}</dd></div>{% endif %}
+    </dl>
+  </section>
+  <section class="panel">
+    <h2><i class="fa-solid fa-calculator"></i> Totales</h2>
+    <table>
+      <tr><td>Subtotal</td><td class="derecha">Q {{ venta.subtotal|floatformat:2 }}</td></tr>
+      <tr><td>Descuento</td><td class="derecha">- Q {{ venta.descuento|floatformat:2 }}</td></tr>
+      <tr><td><strong>Total</strong></td><td class="derecha"><strong>Q {{ venta.total|floatformat:2 }}</strong></td></tr>
+      <tr><td>Pagado</td><td class="derecha">Q {{ pagado|floatformat:2 }}</td></tr>
+      <tr><td><strong>Saldo</strong></td><td class="derecha"><strong style="color:{% if saldo > 0 %}var(--rojo){% else %}var(--verde){% endif %}">Q {{ saldo|floatformat:2 }}</strong></td></tr>
+    </table>
+    {% if puede_editar and lineas %}
+    <form method="post" action="{% url 'descuento_venta' venta.id_venta %}" class="busqueda" style="margin:14px 0 0">
+      {% csrf_token %}
+      {{ form_descuento.descuento }}
+      <button class="btn btn-sm" type="submit">Aplicar descuento</button>
+      {% for error in form_descuento.descuento.errors %}<span class="errorlist">{{ error }}</span>{% endfor %}
+    </form>
+    {% endif %}
+  </section>
+  <section class="panel">
+    <h2><i class="fa-solid fa-money-bill-wave"></i> Pagos</h2>
+    {% for pago, metodo in pagos %}
+      <p style="margin:0 0 8px"><strong>Q {{ pago.monto|floatformat:2 }}</strong> · {{ metodo.nombre|default:"—"|capfirst }}<br><small class="muted">{{ pago.fecha_pago|date:"d/m/Y H:i" }}{% if pago.referencia %} · Ref. {{ pago.referencia }}{% endif %}</small></p>
+    {% empty %}
+      <p class="muted">Sin pagos registrados.</p>
+    {% endfor %}
+    {% if puede_pagar %}
+      <form method="post" action="{% url 'pago_venta' venta.id_venta %}" style="margin-top:12px">
+        {% csrf_token %}
+        {% for field in form_pago %}
+          <div class="campo"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% for error in field.errors %}<span class="errorlist">{{ error }}</span>{% endfor %}</div>
+        {% endfor %}
+        <button class="btn btn-azul" type="submit"><i class="fa-solid fa-floppy-disk"></i> Registrar pago</button>
+      </form>
+    {% elif venta.estado == 'PENDIENTE' %}
+      <p class="muted"><small>Confirma la venta para registrar pagos.</small></p>
+    {% endif %}
+  </section>
+</div>
+
+<section class="panel">
+  <h2><i class="fa-solid fa-list"></i> Productos</h2>
+  <div class="tabla-wrap"><table>
+    <thead><tr><th>Código</th><th>Producto</th><th class="derecha">Cantidad</th><th class="derecha">Precio</th><th class="derecha">Descuento</th><th class="derecha">Subtotal</th>{% if puede_editar %}<th></th>{% endif %}</tr></thead>
+    <tbody>
+    {% for linea in lineas %}
+      <tr>
+        <td>{{ linea.producto_codigo }}</td>
+        <td>{{ linea.producto_nombre }}{% if linea.es_servicio %} <small>(servicio)</small>{% endif %}</td>
+        <td class="derecha">{{ linea.cantidad }}</td>
+        <td class="derecha">Q {{ linea.precio_unitario|floatformat:2 }}</td>
+        <td class="derecha">Q {{ linea.descuento|floatformat:2 }}</td>
+        <td class="derecha">Q {{ linea.subtotal|floatformat:2 }}</td>
+        {% if puede_editar %}
+        <td class="derecha">
+          <form method="post" action="{% url 'quitar_linea_venta' venta.id_venta linea.id_detalle %}">{% csrf_token %}
+            <button class="btn btn-sm btn-peligro" type="submit" title="Quitar"><i class="fa-solid fa-trash"></i></button>
+          </form>
+        </td>
+        {% endif %}
+      </tr>
+    {% empty %}
+      <tr><td colspan="7" class="vacio">Todavía no hay productos en esta venta.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+
+  {% if puede_editar %}
+  <form method="post" action="{% url 'agregar_linea_venta' venta.id_venta %}" style="margin-top:18px;border-top:1px solid var(--borde);padding-top:16px">
+    {% csrf_token %}
+    {% if form_linea.non_field_errors %}<div class="mensaje error">{{ form_linea.non_field_errors }}</div>{% endif %}
+    <div class="form-grid" style="grid-template-columns:3fr 1fr 1fr 1fr auto;align-items:end">
+      {% for field in form_linea %}
+        <p><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% for error in field.errors %}<span class="errorlist">{{ error }}</span>{% endfor %}</p>
+      {% endfor %}
+      <p><button class="btn btn-azul" type="submit"><i class="fa-solid fa-plus"></i> Agregar</button></p>
+    </div>
+  </form>
+  {{ servicios_precios|json_script:"precios-servicios" }}
+  {% endif %}
+</section>
+
+{% if puede_anular %}
+<dialog id="dlgAnular" {% if form_anular.errors %}open{% endif %}>
+  <h3><i class="fa-solid fa-ban"></i> Anular venta #{{ venta.id_venta }}</h3>
+  <p class="muted">{% if venta.estado != 'PENDIENTE' %}Se devolverán los productos al inventario. {% endif %}{% if pagado %}Hay Q {{ pagado|floatformat:2 }} pagados que deberás reembolsar.{% endif %}</p>
+  <form method="post" action="{% url 'anular_venta' venta.id_venta %}">
+    {% csrf_token %}
+    <div class="campo"><label for="{{ form_anular.motivo.id_for_label }}">Motivo *</label>{{ form_anular.motivo }}{% for error in form_anular.motivo.errors %}<span class="errorlist">{{ error }}</span>{% endfor %}</div>
+    <div class="acciones">
+      <button class="btn btn-peligro" type="submit">Anular venta</button>
+      <button class="btn" type="button" data-cerrar>Volver</button>
+    </div>
+  </form>
+</dialog>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+  // El precio solo se edita cuando el elegido es un servicio.
+  (function () {
+    const datos = document.getElementById("precios-servicios");
+    const producto = document.getElementById("id_id_producto");
+    const precio = document.getElementById("id_precio_unitario");
+    if (!datos || !producto || !precio) return;
+    const servicios = JSON.parse(datos.textContent);
+
+    function actualizar(rellenar) {
+      const esServicio = producto.value in servicios;
+      precio.disabled = !esServicio;
+      precio.placeholder = esServicio ? "" : "Precio de lista";
+      if (!esServicio) precio.value = "";
+      else if (rellenar) precio.value = servicios[producto.value];
+    }
+
+    producto.addEventListener("change", function () { actualizar(true); });
+    actualizar(precio.value === "");
+  })();
+</script>
+{% endblock %}

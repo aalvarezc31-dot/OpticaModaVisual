@@ -1,0 +1,38 @@
+{% extends "presentacion/base.html" %}
+{% block titulo %}Facturas | Óptica Moda Visual{% endblock %}
+{% block contenido %}
+<div class="pagina-cabecera">
+  <div><h1><i class="fa-solid fa-file-invoice-dollar"></i> Facturas</h1><p class="subtitulo">Facturas emitidas a partir de las ventas confirmadas.</p></div>
+  <a class="btn" href="{% url 'lista_ventas' %}?estado=CONFIRMADA"><i class="fa-solid fa-cash-register"></i> Ventas por facturar</a>
+</div>
+<section class="panel">
+  <form class="busqueda" method="get">
+    <input type="search" name="q" value="{{ busqueda }}" placeholder="Número, No. de venta, NIT o nombre">
+    <select name="estado" aria-label="Estado">
+      <option value="">Todas</option>
+      {% for valor, nombre in estados %}<option value="{{ valor }}" {% if estado == valor %}selected{% endif %}>{{ nombre }}</option>{% endfor %}
+    </select>
+    <button class="btn btn-azul" type="submit"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+    {% if busqueda or estado %}<a class="btn" href="{% url 'lista_facturas' %}">Limpiar</a>{% endif %}
+  </form>
+  <div class="tabla-wrap"><table>
+    <thead><tr><th>Factura</th><th>Fecha</th><th>Receptor</th><th>Venta</th><th>Estado</th><th class="derecha">IVA</th><th class="derecha">Total</th></tr></thead>
+    <tbody>
+    {% for f in pagina %}
+      <tr>
+        <td><a href="{% url 'detalle_factura' f.id_factura %}"><strong>{{ f.serie }}-{{ f.numero }}</strong></a></td>
+        <td class="nowrap">{{ f.fecha_emision|date:"d/m/Y H:i" }}</td>
+        <td>{{ f.nombre_receptor }}<br><small>NIT {{ f.nit_receptor }}</small></td>
+        <td><a href="{% url 'detalle_venta' f.id_venta %}">#{{ f.id_venta }}</a></td>
+        <td><span class="estado e-{{ f.estado|lower }}">{{ f.estado }}</span></td>
+        <td class="derecha nowrap">Q {{ f.monto_iva|floatformat:2 }}</td>
+        <td class="derecha nowrap"><strong>Q {{ f.total|floatformat:2 }}</strong></td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="7" class="vacio"><i class="fa-solid fa-file-circle-xmark"></i><br>No hay facturas emitidas.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% include "presentacion/_paginacion.html" %}
+</section>
+{% endblock %}

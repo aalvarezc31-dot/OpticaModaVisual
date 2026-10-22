@@ -1,0 +1,55 @@
+{% extends "presentacion/base.html" %}
+{% block titulo %}Categorías y marcas | Óptica Moda Visual{% endblock %}
+{% block contenido %}
+<div class="pagina-cabecera">
+  <div><h1><i class="fa-solid fa-tags"></i> Categorías y marcas</h1><p class="subtitulo">Catálogos para clasificar los productos del inventario.</p></div>
+  <a class="btn" href="{% url 'lista_productos' %}"><i class="fa-solid fa-arrow-left"></i> Productos</a>
+</div>
+<div class="grid-2">
+  <section class="panel">
+    <h2><i class="fa-solid fa-layer-group"></i> Categorías</h2>
+    <form method="post" action="{% if categoria_editando %}{% url 'editar_categoria' categoria_editando.id_categoria %}{% else %}{% url 'registrar_categoria' %}{% endif %}">
+      {% csrf_token %}
+      {% with form=form_categoria %}{% include "presentacion/_campos.html" %}{% endwith %}
+      <div class="acciones" style="margin-top:0;margin-bottom:16px">
+        <button class="btn btn-azul" type="submit"><i class="fa-solid fa-floppy-disk"></i> {% if categoria_editando %}Guardar cambios{% else %}Agregar categoría{% endif %}</button>
+        {% if categoria_editando %}<a class="btn" href="{% url 'catalogos_inventario' %}">Cancelar</a>{% endif %}
+      </div>
+    </form>
+    <table>
+      <thead><tr><th>Nombre</th><th>Descripción</th><th></th></tr></thead>
+      <tbody>
+      {% for c in categorias %}
+        <tr><td><strong>{{ c.nombre }}</strong></td><td>{{ c.descripcion|default:"—" }}</td>
+          <td class="derecha"><a class="btn btn-sm" href="?categoria={{ c.id_categoria }}" title="Editar"><i class="fa-solid fa-pen"></i></a></td></tr>
+      {% empty %}
+        <tr><td colspan="3" class="vacio">Sin categorías.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="panel">
+    <h2><i class="fa-solid fa-copyright"></i> Marcas</h2>
+    <form method="post" action="{% if marca_editando %}{% url 'editar_marca' marca_editando.id_marca %}{% else %}{% url 'registrar_marca' %}{% endif %}">
+      {% csrf_token %}
+      {% with form=form_marca %}{% include "presentacion/_campos.html" %}{% endwith %}
+      <div class="acciones" style="margin-top:0;margin-bottom:16px">
+        <button class="btn btn-azul" type="submit"><i class="fa-solid fa-floppy-disk"></i> {% if marca_editando %}Guardar cambios{% else %}Agregar marca{% endif %}</button>
+        {% if marca_editando %}<a class="btn" href="{% url 'catalogos_inventario' %}">Cancelar</a>{% endif %}
+      </div>
+    </form>
+    <table>
+      <thead><tr><th>Nombre</th><th></th></tr></thead>
+      <tbody>
+      {% for m in marcas %}
+        <tr><td><strong>{{ m.nombre }}</strong></td>
+          <td class="derecha"><a class="btn btn-sm" href="?marca={{ m.id_marca }}" title="Editar"><i class="fa-solid fa-pen"></i></a></td></tr>
+      {% empty %}
+        <tr><td colspan="2" class="vacio">Sin marcas registradas.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+</div>
+{% endblock %}

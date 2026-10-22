@@ -1,0 +1,55 @@
+{% extends "presentacion/base.html" %}
+{% block titulo %}Productos | Óptica Moda Visual{% endblock %}
+{% block contenido %}
+<div class="pagina-cabecera">
+  <div><h1><i class="fa-solid fa-glasses"></i> Productos</h1><p class="subtitulo">Inventario de monturas, lentes, accesorios y servicios.</p></div>
+  <div class="botones">
+    <a class="btn" href="{% url 'lista_proveedores' %}"><i class="fa-solid fa-truck"></i> Proveedores</a>
+    <a class="btn" href="{% url 'catalogos_inventario' %}"><i class="fa-solid fa-tags"></i> Categorías y marcas</a>
+    <a class="btn btn-azul" href="{% url 'registrar_producto' %}"><i class="fa-solid fa-circle-plus"></i> Nuevo producto</a>
+  </div>
+</div>
+<section class="panel">
+  <form class="busqueda" method="get">
+    <input type="search" name="q" value="{{ busqueda }}" placeholder="Código, nombre, modelo, color o material">
+    <select name="categoria" aria-label="Categoría">
+      <option value="">Todas las categorías</option>
+      {% for c in categorias %}<option value="{{ c.id_categoria }}" {% if c.id_categoria == id_categoria %}selected{% endif %}>{{ c.nombre }}</option>{% endfor %}
+    </select>
+    <select name="estado" aria-label="Estado">
+      <option value="activos" {% if estado == 'activos' %}selected{% endif %}>Activos</option>
+      <option value="inactivos" {% if estado == 'inactivos' %}selected{% endif %}>Inactivos</option>
+      <option value="todos" {% if estado == 'todos' %}selected{% endif %}>Todos</option>
+    </select>
+    <label class="check"><input type="checkbox" name="stock_bajo" value="1" {% if stock_bajo %}checked{% endif %}> Solo stock bajo</label>
+    <button class="btn btn-azul" type="submit"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+    {% if busqueda or id_categoria or stock_bajo or estado != 'activos' %}<a class="btn" href="{% url 'lista_productos' %}">Limpiar</a>{% endif %}
+  </form>
+  <div class="tabla-wrap"><table style="min-width:860px">
+    <thead><tr><th>Código</th><th>Producto</th><th>Categoría</th><th class="derecha">Precio</th><th class="derecha">Existencias</th><th>Estado</th><th></th></tr></thead>
+    <tbody>
+    {% for producto in pagina %}
+      <tr>
+        <td class="nowrap"><strong>{{ producto.codigo }}</strong></td>
+        <td><a href="{% url 'detalle_producto' producto.id_producto %}"><strong>{{ producto.nombre }}</strong></a><br><small>{{ producto.modelo|default:"" }} {{ producto.color|default:"" }}</small></td>
+        <td>{{ producto.categoria_nombre|default:"—" }}</td>
+        <td class="derecha nowrap">Q {{ producto.precio_venta|floatformat:2 }}</td>
+        <td class="derecha">{% if producto.es_servicio %}<span class="muted">Servicio</span>{% else %}{{ producto.stock_actual }} <small>/ mín. {{ producto.stock_minimo }}</small>{% endif %}</td>
+        <td>
+          {% if not producto.activo %}<span class="estado e-inactivo">Inactivo</span>
+          {% elif not producto.es_servicio and producto.stock_actual <= producto.stock_minimo %}<span class="estado e-bajo">Stock bajo</span>
+          {% else %}<span class="estado e-activo">Disponible</span>{% endif %}
+        </td>
+        <td class="derecha nowrap">
+          <a class="btn btn-sm" href="{% url 'detalle_producto' producto.id_producto %}" title="Ver y mover stock"><i class="fa-solid fa-boxes-stacked"></i></a>
+          <a class="btn btn-sm" href="{% url 'editar_producto' producto.id_producto %}" title="Editar"><i class="fa-solid fa-pen"></i></a>
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="7" class="vacio"><i class="fa-solid fa-box-open"></i><br>No se encontraron productos.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% include "presentacion/_paginacion.html" %}
+</section>
+{% endblock %}

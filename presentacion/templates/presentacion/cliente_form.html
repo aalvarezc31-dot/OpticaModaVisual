@@ -1,0 +1,20 @@
+{% extends "presentacion/base.html" %}
+{% block titulo %}{% if cliente %}Editar{% else %}Registrar{% endif %} cliente | Óptica Moda Visual{% endblock %}
+{% block contenido %}
+<div class="pagina-cabecera">
+  <div>
+    <h1><i class="fa-solid fa-user-{% if cliente %}pen{% else %}plus{% endif %}"></i> {% if cliente %}Editar cliente{% else %}Registrar cliente{% endif %}</h1>
+    <p class="subtitulo">{% if cliente %}{{ cliente.nombres }} {{ cliente.apellidos }}{% else %}Completa los datos del paciente. Los campos obligatorios se validan al guardar.{% endif %}</p>
+  </div>
+</div>
+<section class="form-panel">
+  <form method="post">
+    {% csrf_token %}
+    {% include "presentacion/_campos.html" %}
+    <div class="acciones">
+      <button class="btn btn-azul" type="submit"><i class="fa-solid fa-floppy-disk"></i> Guardar cliente</button>
+      <a class="btn" href="{% if cliente %}{% url 'detalle_cliente' cliente.id_cliente %}{% else %}{% url 'lista_clientes' %}{% endif %}"><i class="fa-solid fa-arrow-left"></i> Volver</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,94 @@
+{% extends "presentacion/base.html" %}
+{% block titulo %}Reportes | Óptica Moda Visual{% endblock %}
+{% block contenido %}
+<div class="pagina-cabecera">
+  <div><h1><i class="fa-solid fa-chart-line"></i> Reportes</h1><p class="subtitulo">Información tomada de las vistas del esquema <code>reportes</code> de la base de datos.</p></div>
+  <form method="get" class="botones no-imprimir">
+    <select name="dias" onchange="this.form.submit()" aria-label="Periodo">
+      <option value="7" {% if dias == 7 %}selected{% endif %}>Últimos 7 días</option>
+      <option value="30" {% if dias == 30 %}selected{% endif %}>Últimos 30 días</option>
+      <option value="90" {% if dias == 90 %}selected{% endif %}>Últimos 90 días</option>
+      <option value="365" {% if dias == 365 %}selected{% endif %}>Último año</option>
+    </select>
+    <button class="btn" type="button" onclick="window.print()"><i class="fa-solid fa-print"></i> Imprimir</button>
+  </form>
+</div>
+
+<section class="kpis">
+  <div class="kpi"><small>Vendido en el periodo</small><strong>Q {{ total_periodo|floatformat:2 }}</strong></div>
+  <div class="kpi"><small>Ventas en el periodo</small><strong>{{ ventas_periodo }}</strong></div>
+  <div class="kpi"><small>Saldo por cobrar</small><strong>Q {{ saldo_total|floatformat:2 }}</strong><small>{{ saldos|length }} venta(s)</small></div>
+  <div class="kpi"><small>Productos con stock bajo</small><strong>{{ stock_bajo|length }}</strong></div>
+</section>
+
+<div class="grid-2">
+  <section class="panel">
+    <h2><i class="fa-solid fa-calendar-day"></i> Ventas diarias</h2>
+    <div class="tabla-wrap"><table style="min-width:0">
+      <thead><tr><th>Fecha</th><th class="derecha">Ventas</th><th class="derecha">Descuentos</th><th class="derecha">Total</th></tr></thead>
+      <tbody>
+      {% for d in ventas_diarias %}
+        <tr><td>{{ d.fecha|date:"d/m/Y" }}</td><td class="derecha">{{ d.cantidad_ventas }}</td><td class="derecha">Q {{ d.descuentos|floatformat:2 }}</td><td class="derecha"><strong>Q {{ d.total_vendido|floatformat:2 }}</strong></td></tr>
+      {% empty %}
+        <tr><td colspan="4" class="vacio">Sin ventas en el periodo.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  </section>
+
+  <section class="panel">
+    <h2><i class="fa-solid fa-user-tie"></i> Ventas por vendedor</h2>
+    <table>
+      <thead><tr><th>Vendedor</th><th class="derecha">Ventas</th><th class="derecha">Total</th></tr></thead>
+      <tbody>
+      {% for v in por_vendedor %}
+        <tr><td>{{ v.vendedor_nombre }}</td><td class="derecha">{{ v.cantidad_ventas }}</td><td class="derecha">Q {{ v.total_vendido|floatformat:2 }}</td></tr>
+      {% empty %}
+        <tr><td colspan="3" class="vacio">Sin datos.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <h2 style="margin-top:22px"><i class="fa-solid fa-trophy"></i> Productos más vendidos</h2>
+    <table>
+      <thead><tr><th>Producto</th><th class="derecha">Unidades</th><th class="derecha">Ingresos</th></tr></thead>
+      <tbody>
+      {% for p in mas_vendidos %}
+        <tr><td>{{ p.codigo }} · {{ p.nombre }}</td><td class="derecha">{{ p.unidades_vendidas }}</td><td class="derecha">Q {{ p.ingresos|floatformat:2 }}</td></tr>
+      {% empty %}
+        <tr><td colspan="3" class="vacio">Sin datos.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+</div>
+
+<div class="grid-2" style="margin-top:20px">
+  <section class="panel">
+    <h2><i class="fa-solid fa-hand-holding-dollar"></i> Saldos por cobrar</h2>
+    <div class="tabla-wrap"><table style="min-width:0">
+      <thead><tr><th>Venta</th><th>Cliente</th><th class="derecha">Total</th><th class="derecha">Saldo</th></tr></thead>
+      <tbody>
+      {% for s in saldos %}
+        <tr><td><a href="{% url 'detalle_venta' s.id_venta %}">#{{ s.id_venta }}</a><br><small>{{ s.fecha_venta|date:"d/m/Y" }}</small></td><td>{{ s.cliente_nombre }}</td><td class="derecha">Q {{ s.total|floatformat:2 }}</td><td class="derecha"><strong>Q {{ s.saldo|floatformat:2 }}</strong></td></tr>
+      {% empty %}
+        <tr><td colspan="4" class="vacio">No hay saldos pendientes.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  </section>
+
+  <section class="panel">
+    <h2><i class="fa-solid fa-triangle-exclamation"></i> Stock bajo</h2>
+    <div class="tabla-wrap"><table style="min-width:0">
+      <thead><tr><th>Producto</th><th>Proveedor</th><th class="derecha">Stock</th></tr></thead>
+      <tbody>
+      {% for p in stock_bajo %}
+        <tr><td><a href="{% url 'detalle_producto' p.id_producto %}">{{ p.codigo }} · {{ p.nombre }}</a><br><small>{{ p.categoria }}</small></td><td>{{ p.proveedor|default:"—" }}<br><small>{{ p.telefono_proveedor|default:"" }}</small></td><td class="derecha"><span class="estado e-bajo">{{ p.stock_actual }} / {{ p.stock_minimo }}</span></td></tr>
+      {% empty %}
+        <tr><td colspan="3" class="vacio">Todo el inventario está sobre el mínimo.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  </section>
+</div>
+{% endblock %}

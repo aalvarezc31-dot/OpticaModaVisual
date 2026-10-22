@@ -1,0 +1,485 @@
+
+{% extends "presentacion/base.html" %}
+
+{% block titulo %}Dashboard | Óptica Moda Visual{% endblock %}
+
+{% block estilos %}
+<style>
+.dashboard {
+    display: grid;
+    gap: 25px;
+}
+
+.dash-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.dash-top h1 {
+    margin: 0;
+    color: #174785;
+    font-size: 28px;
+}
+
+.dash-top p {
+    color: #718096;
+    margin: 7px 0 0;
+}
+
+.fecha {
+    background: white;
+    border: 1px solid #dce5f0;
+    padding: 11px 15px;
+    border-radius: 10px;
+    color: #174785;
+}
+
+.metricas {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.metrica {
+    background: white;
+    border: 1px solid #dce5f0;
+    border-radius: 15px;
+    padding: 20px;
+    transition: .2s;
+    min-width: 0;
+}
+
+.metrica:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 24px #17478512;
+}
+
+.metrica-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.metrica-icono {
+    width: 46px;
+    height: 46px;
+    border-radius: 13px;
+    background: #eaf2ff;
+    color: #174785;
+    display: grid;
+    place-items: center;
+    font-size: 20px;
+}
+
+.metrica small {
+    color: #718096;
+    font-weight: 600;
+}
+
+.metrica h2 {
+    color: #174785;
+    font-size: 32px;
+    margin: 16px 0 5px;
+}
+
+.metrica p {
+    color: #718096;
+    font-size: 13px;
+    margin: 0;
+}
+
+.panel {
+    background: white;
+    border: 1px solid #dce5f0;
+    border-radius: 15px;
+    padding: 22px;
+    min-width: 0;
+}
+
+.panel h2 {
+    margin: 0;
+    color: #174785;
+    font-size: 19px;
+}
+
+.panel-sub {
+    color: #718096;
+    font-size: 13px;
+    margin: 7px 0 20px;
+}
+
+.contenido-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    gap: 20px;
+}
+
+.grafico {
+    height: 205px;
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+    padding-top: 12px;
+    border-bottom: 1px solid #dce5f0;
+}
+
+.barra-col {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.barra-valor {
+    font-size: 12px;
+    color: #174785;
+    font-weight: 700;
+    margin-bottom: 7px;
+}
+
+.barra {
+    width: min(38px, 75%);
+    min-height: 5px;
+    border-radius: 7px 7px 0 0;
+    background: linear-gradient(180deg, #4f8fe8, #174785);
+    transition: height .3s;
+}
+
+.barra-dia {
+    color: #718096;
+    font-size: 11px;
+    margin-top: 9px;
+}
+
+.citas-lista {
+    display: grid;
+    gap: 12px;
+}
+
+.cita-item {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 12px;
+    background: #f7faff;
+    border: 1px solid #e6edf8;
+    border-radius: 11px;
+}
+
+.cita-icono {
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    background: #eaf2ff;
+    color: #174785;
+    border-radius: 11px;
+}
+
+.cita-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.cita-info strong {
+    display: block;
+    color: #26364b;
+    overflow-wrap: anywhere;
+}
+
+.cita-info small {
+    display: block;
+    color: #718096;
+    margin-top: 5px;
+}
+
+.estado {
+    padding: 5px 8px;
+    background: #eaf2ff;
+    color: #174785;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.vacio {
+    padding: 22px 5px;
+    text-align: center;
+    color: #718096;
+}
+
+.atajos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 14px;
+}
+
+.atajo {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    background: white;
+    border: 1px solid #dce5f0;
+    padding: 16px;
+    border-radius: 12px;
+    text-decoration: none;
+    color: #174785;
+    transition: .2s;
+}
+
+.atajo:hover {
+    background: #eaf2ff;
+    transform: translateY(-3px);
+}
+
+.atajo i {
+    font-size: 21px;
+}
+
+.atajo strong {
+    display: block;
+    font-size: 14px;
+}
+
+.atajo small {
+    display: block;
+    color: #718096;
+    margin-top: 4px;
+}
+
+@media (max-width: 1050px) {
+    .metricas {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .contenido-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .metricas,
+    .atajos {
+        grid-template-columns: 1fr;
+    }
+
+    .dash-top h1 {
+        font-size: 23px;
+    }
+
+    .panel {
+        padding: 16px;
+    }
+
+    .grafico {
+        gap: 5px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block contenido %}
+<div class="dashboard">
+
+    <div class="dash-top">
+        <div>
+            <h1>
+                <i class="fa-solid fa-chart-line"></i>
+                Panel de control
+            </h1>
+            <p>Resumen general de Óptica Moda Visual.</p>
+        </div>
+
+        <div class="fecha">
+            <i class="fa-regular fa-calendar"></i>
+            {{ fecha_actual|date:"d/m/Y" }}
+        </div>
+    </div>
+
+    <section class="metricas">
+
+        <article class="metrica">
+            <div class="metrica-top">
+                <small>Clientes registrados</small>
+                <div class="metrica-icono">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+            </div>
+            <h2>{{ clientes_total }}</h2>
+            <p>Total de clientes en el sistema</p>
+        </article>
+
+        <article class="metrica">
+            <div class="metrica-top">
+                <small>Citas de hoy</small>
+                <div class="metrica-icono">
+                    <i class="fa-solid fa-calendar-check"></i>
+                </div>
+            </div>
+            <h2>{{ citas_hoy }}</h2>
+            <p>Citas no canceladas para hoy</p>
+        </article>
+
+        <article class="metrica">
+            <div class="metrica-top">
+                <small>Ventas de hoy</small>
+                <div class="metrica-icono">
+                    <i class="fa-solid fa-cash-register"></i>
+                </div>
+            </div>
+            <h2>Q {{ ventas_hoy|floatformat:2 }}</h2>
+            <p>
+                {% if ventas_pendientes %}
+                    <a href="{% url 'lista_ventas' %}?estado=PENDIENTE">{{ ventas_pendientes }} venta(s) pendiente(s) de confirmar</a>
+                {% else %}
+                    Ventas confirmadas del día
+                {% endif %}
+            </p>
+        </article>
+
+        <article class="metrica">
+            <div class="metrica-top">
+                <small>Inventario</small>
+                <div class="metrica-icono">
+                    <i class="fa-solid fa-boxes-stacked"></i>
+                </div>
+            </div>
+            <h2>{{ productos_total }}</h2>
+            <p>
+                {% if stock_bajo %}
+                    <a href="{% url 'lista_productos' %}?stock_bajo=1" style="color:#b91c1c">{{ stock_bajo }} producto(s) con stock bajo</a>
+                {% else %}
+                    Productos activos, sin alertas de stock
+                {% endif %}
+            </p>
+        </article>
+
+    </section>
+
+    <section class="contenido-grid">
+
+        <article class="panel">
+            <h2>
+                <i class="fa-solid fa-chart-column"></i>
+                Actividad de citas
+            </h2>
+            <p class="panel-sub">
+                Cantidad de citas registradas por fecha durante los últimos siete días.
+            </p>
+
+            <div class="grafico">
+                {% for dia in actividad_semana %}
+                <div class="barra-col"
+                     title="{{ dia.fecha }}: {{ dia.cantidad }} citas">
+
+                    <span class="barra-valor">{{ dia.cantidad }}</span>
+
+                    <div class="barra"
+                         style="height: {{ dia.porcentaje }}%;">
+                    </div>
+
+                    <span class="barra-dia">{{ dia.etiqueta }}</span>
+                </div>
+                {% empty %}
+                <p class="vacio">No hay datos de citas para mostrar.</p>
+                {% endfor %}
+            </div>
+        </article>
+
+        <article class="panel">
+            <h2>
+                <i class="fa-solid fa-calendar-day"></i>
+                Próximas citas
+            </h2>
+            <p class="panel-sub">
+                Las siguientes citas programadas.
+            </p>
+
+            <div class="citas-lista">
+                {% for cita in citas_proximas %}
+                <div class="cita-item">
+
+                    <div class="cita-icono">
+                        <i class="fa-solid fa-user-clock"></i>
+                    </div>
+
+                    <div class="cita-info">
+                        <strong>{{ cita.cliente_nombre }}</strong>
+                        <small>
+                            {{ cita.fecha_hora_inicio|date:"d/m/Y · H:i" }}
+                        </small>
+                    </div>
+
+                    <span class="estado">{{ cita.estado }}</span>
+                </div>
+
+                {% empty %}
+                <div class="vacio">
+                    <i class="fa-regular fa-calendar-xmark"></i>
+                    <p>No hay próximas citas registradas.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </article>
+
+    </section>
+
+    <section>
+        <h2 style="color:#174785; margin:0 0 15px;">
+            Accesos rápidos
+        </h2>
+
+        <div class="atajos">
+
+            <a class="atajo" href="{% url 'registrar_cliente' %}">
+                <i class="fa-solid fa-user-plus"></i>
+                <span>
+                    <strong>Nuevo cliente</strong>
+                    <small>Registrar paciente</small>
+                </span>
+            </a>
+
+            <a class="atajo" href="{% url 'registrar_cita' %}">
+                <i class="fa-solid fa-calendar-plus"></i>
+                <span>
+                    <strong>Programar cita</strong>
+                    <small>Agendar consulta</small>
+                </span>
+            </a>
+
+            <a class="atajo" href="{% url 'registrar_examen' %}">
+                <i class="fa-solid fa-eye"></i>
+                <span>
+                    <strong>Registrar examen</strong>
+                    <small>Examen visual</small>
+                </span>
+            </a>
+
+            <a class="atajo" href="{% url 'nueva_venta' %}">
+                <i class="fa-solid fa-cart-plus"></i>
+                <span>
+                    <strong>Nueva venta</strong>
+                    <small>Lentes, monturas y servicios</small>
+                </span>
+            </a>
+
+            <a class="atajo" href="{% url 'registrar_producto' %}">
+                <i class="fa-solid fa-circle-plus"></i>
+                <span>
+                    <strong>Nuevo producto</strong>
+                    <small>Agregar al inventario</small>
+                </span>
+            </a>
+
+        </div>
+    </section>
+
+</div>
+{% endblock %}

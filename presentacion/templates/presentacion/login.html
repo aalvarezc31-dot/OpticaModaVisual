@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Iniciar sesión | Óptica Moda Visual</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --azul: #174785;
+            --azul-medio: #245da0;
+            --azul-claro: #4f8fe8;
+            --fondo: #f7faff;
+            --borde: #dce5f0;
+            --texto: #263445;
+            --secundario: #718096;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(
+                135deg, #174785, #4f8fe8, #eaf2ff
+            );
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .contenedor {
+            width: 100%;
+            max-width: 950px;
+            min-height: 540px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            background: white;
+            border-radius: 22px;
+            overflow: hidden;
+            box-shadow: 0 20px 55px #102a4333;
+            animation: aparecer .7s ease;
+        }
+
+        /* PANEL VISUAL */
+
+        .panel-visual {
+            background: linear-gradient(
+                160deg, #174785, #245da0
+            );
+            color: white;
+            padding: 45px 35px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .panel-visual::before,
+        .panel-visual::after {
+            content: "";
+            position: absolute;
+            border: 1px solid #ffffff12;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .panel-visual::before {
+            width: 280px;
+            height: 280px;
+            top: -130px;
+            left: -120px;
+        }
+
+        .panel-visual::after {
+            width: 350px;
+            height: 350px;
+            bottom: -200px;
+            right: -160px;
+        }
+
+        .logo {
+            width: 120px;
+            height: 120px;
+            border: 2px solid #ffffff99;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 25px;
+            background: #ffffff12;
+            box-shadow: 0 0 0 12px #ffffff0a;
+            position: relative;
+            z-index: 1;
+        }
+
+        .logo svg {
+            width: 76px;
+            height: 76px;
+        }
+
+        .panel-visual h1 {
+            font-size: 29px;
+            margin: 0 0 15px;
+            line-height: 1.25;
+            position: relative;
+            z-index: 1;
+        }
+
+        .panel-visual p {
+            color: #eaf2ff;
+            line-height: 1.7;
+            font-size: 15px;
+            max-width: 320px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .etiqueta {
+            margin-top: 25px;
+            padding: 9px 15px;
+            border: 1px solid #ffffff55;
+            border-radius: 25px;
+            color: #eaf2ff;
+            font-size: 12px;
+            letter-spacing: 1px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* FORMULARIO */
+
+        .panel-login {
+            padding: 50px 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .encabezado-form {
+            margin-bottom: 28px;
+        }
+
+        .encabezado-form h2 {
+            margin: 0 0 10px;
+            color: var(--azul);
+            font-size: 29px;
+        }
+
+        .descripcion {
+            color: var(--secundario);
+            margin: 0;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .campo {
+            margin-bottom: 20px;
+        }
+
+        .campo label {
+            display: block;
+            font-size: 14px;
+            font-weight: bold;
+            color: #334155;
+            margin-bottom: 9px;
+        }
+
+        .entrada {
+            display: flex;
+            align-items: center;
+            border: 1px solid var(--borde);
+            border-radius: 10px;
+            padding: 0 13px;
+            background: var(--fondo);
+            transition: .25s;
+        }
+
+        .entrada:focus-within {
+            border-color: var(--azul);
+            background: white;
+            box-shadow: 0 0 0 4px #1747851a;
+        }
+
+        .entrada svg {
+            width: 20px;
+            height: 20px;
+            color: #78909c;
+            flex-shrink: 0;
+        }
+
+        .entrada input {
+            width: 100%;
+            min-width: 0;
+            padding: 14px 11px;
+            border: none;
+            outline: none;
+            background: transparent;
+            color: var(--texto);
+            font-size: 14px;
+        }
+
+        .entrada input::placeholder {
+            color: #a0aec0;
+        }
+
+        .ver-clave {
+            border: none;
+            background: transparent;
+            color: var(--azul);
+            cursor: pointer;
+            padding: 8px 0 8px 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ver-clave:hover {
+            color: var(--azul-claro);
+        }
+
+        .ver-clave svg {
+            width: 21px;
+            height: 21px;
+        }
+
+        .ver-clave:focus-visible {
+            outline: 2px solid var(--azul-claro);
+            outline-offset: 3px;
+            border-radius: 4px;
+        }
+
+        .opciones {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0 0 23px;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        .opciones input {
+            accent-color: var(--azul);
+            cursor: pointer;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(
+                100deg, #174785, #4f8fe8
+            );
+            color: white;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform .2s, box-shadow .2s;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 18px #17478533;
+        }
+
+        .btn-login:active {
+            transform: scale(.99);
+        }
+
+        .btn-login:disabled {
+            opacity: .7;
+            cursor: wait;
+            transform: none;
+        }
+
+        /* MENSAJES DE DJANGO */
+
+        .mensaje {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 18px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .mensaje.error {
+            color: #991b1b;
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+        }
+
+        .mensaje.success {
+            color: #166534;
+            background: #dcfce7;
+            border: 1px solid #bbf7d0;
+        }
+
+        .mensaje.warning {
+            color: #92400e;
+            background: #fef3c7;
+            border: 1px solid #fde68a;
+        }
+
+        .mensaje.info {
+            color: #174785;
+            background: #eaf2ff;
+            border: 1px solid #dce5f0;
+        }
+
+        .pie {
+            text-align: center;
+            color: #94a3b8;
+            font-size: 12px;
+            margin-top: 25px;
+            line-height: 1.7;
+        }
+
+        @keyframes aparecer {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* DISEÑO RESPONSIVO */
+
+        @media (max-width: 700px) {
+            body {
+                padding: 14px;
+            }
+
+            .contenedor {
+                max-width: 430px;
+                grid-template-columns: 1fr;
+                min-height: auto;
+            }
+
+            .panel-visual {
+                padding: 28px 20px;
+            }
+
+            .logo {
+                width: 75px;
+                height: 75px;
+                margin-bottom: 18px;
+            }
+
+            .logo svg {
+                width: 49px;
+                height: 49px;
+            }
+
+            .panel-visual h1 {
+                font-size: 23px;
+            }
+
+            .panel-visual p {
+                margin-bottom: 0;
+                font-size: 14px;
+            }
+
+            .etiqueta {
+                margin-top: 15px;
+                font-size: 11px;
+            }
+
+            .panel-login {
+                padding: 32px 24px;
+            }
+
+            .encabezado-form h2 {
+                font-size: 25px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: .01ms !important;
+                transition-duration: .01ms !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="contenedor">
+
+        <section class="panel-visual">
+            <div class="logo">
+                <!-- Icono de ojo -->
+                <svg viewBox="0 0 100 100"
+                     fill="none"
+                     xmlns="http://www.w3.org/2000/svg"
+                     role="img"
+                     aria-label="Ojo, símbolo de salud visual">
+
+                    <path d="M8 50
+                             Q27 22 50 22
+                             Q73 22 92 50
+                             Q73 78 50 78
+                             Q27 78 8 50Z"
+                          stroke="white"
+                          stroke-width="4"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"/>
+
+                    <circle cx="50" cy="50" r="17"
+                            stroke="white"
+                            stroke-width="4"/>
+
+                    <circle cx="50" cy="50" r="7"
+                            fill="white"/>
+
+                    <path d="M18 32 L12 25
+                             M82 32 L88 25"
+                          stroke="white"
+                          stroke-width="3"
+                          stroke-linecap="round"/>
+                </svg>
+            </div>
+
+            <h1>Óptica Moda Visual</h1>
+
+            <p>
+                Cuidamos de tu visión con atención de calidad.
+                Administra clientes, citas e inventario desde un solo lugar.
+            </p>
+
+            <div class="etiqueta">
+                SISTEMA DE GESTIÓN VISUAL
+            </div>
+        </section>
+
+        <section class="panel-login">
+            <div class="encabezado-form">
+                <h2>¡Bienvenido!</h2>
+                <p class="descripcion">
+                    Inicia sesión para acceder al sistema.
+                    Ingresa tus credenciales para continuar.
+                </p>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="mensaje {{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post" id="formLogin">
+                {% csrf_token %}
+
+                <div class="campo">
+                    <label for="username">Nombre de usuario</label>
+
+                    <div class="entrada">
+                        <svg viewBox="0 0 24 24"
+                             fill="none"
+                             stroke="currentColor"
+                             stroke-width="1.8"
+                             aria-hidden="true">
+                            <circle cx="12" cy="8" r="4"/>
+                            <path d="M4 21v-2a8 8 0 0 1 16 0v2"/>
+                        </svg>
+
+                        <input type="text"
+                               id="username"
+                               name="username"
+                               placeholder="Ingresa tu usuario"
+                               autocomplete="username"
+                               required
+                               autofocus>
+                    </div>
+                </div>
+
+                <div class="campo">
+                    <label for="password">Contraseña</label>
+
+                    <div class="entrada">
+                        <svg viewBox="0 0 24 24"
+                             fill="none"
+                             stroke="currentColor"
+                             stroke-width="1.8"
+                             aria-hidden="true">
+                            <rect x="4" y="10"
+                                  width="16" height="11" rx="2"/>
+                            <path d="M8 10V7a4 4 0 0 1 8 0v3"/>
+                        </svg>
+
+                        <input type="password"
+                               id="password"
+                               name="password"
+                               placeholder="Ingresa tu contraseña"
+                               autocomplete="current-password"
+                               required>
+
+                        <button type="button"
+                                class="ver-clave"
+                                id="togglePassword"
+                                aria-label="Mostrar contraseña"
+                                aria-pressed="false">
+
+                            <!-- Ojo visible -->
+                            <svg id="iconoOjo"
+                                 viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 stroke-width="1.8"
+                                 stroke-linecap="round"
+                                 stroke-linejoin="round"
+                                 aria-hidden="true">
+                                <path d="M2 12s3.6-7 10-7
+                                         10 7 10 7-3.6 7-10 7
+                                         -10-7-10-7Z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <label class="opciones">
+                    <input type="checkbox" id="recordarUsuario">
+                    Recordar usuario en este dispositivo
+                </label>
+
+                <button type="submit"
+                        class="btn-login"
+                        id="btnLogin">
+                    Iniciar sesión
+                </button>
+            </form>
+
+            <div class="pie">
+                Óptica Moda Visual<br>
+                Acceso exclusivo para usuarios autorizados
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        const password = document.getElementById("password");
+        const togglePassword = document.getElementById("togglePassword");
+        const username = document.getElementById("username");
+        const recordarUsuario = document.getElementById("recordarUsuario");
+        const formLogin = document.getElementById("formLogin");
+        const btnLogin = document.getElementById("btnLogin");
+        const iconoOjo = document.getElementById("iconoOjo");
+
+        // Mostrar u ocultar la contraseña.
+        togglePassword.addEventListener("click", function () {
+            const mostrar = password.type === "password";
+
+            password.type = mostrar ? "text" : "password";
+
+            togglePassword.setAttribute(
+                "aria-pressed", String(mostrar)
+            );
+
+            togglePassword.setAttribute(
+                "aria-label",
+                mostrar ? "Ocultar contraseña" : "Mostrar contraseña"
+            );
+
+            // Cambiar el dibujo del ojo según el estado.
+            iconoOjo.innerHTML = mostrar
+                ? '<path d="M3 3l18 18"/>' +
+                  '<path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/>' +
+                  '<path d="M9.9 5.2A10.8 10.8 0 0 1 12 5' +
+                  'c6.4 0 10 7 10 7a16 16 0 0 1-4 4.8"/>' +
+                  '<path d="M6.2 6.2C3.5 8 2 12 2 12' +
+                  's3.6 7 10 7c1.2 0 2.3-.3 3.3-.7"/>'
+                : '<path d="M2 12s3.6-7 10-7' +
+                  ' 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/>' +
+                  '<circle cx="12" cy="12" r="3"/>';
+
+            password.focus();
+        });
+
+        // Recordar solo el nombre de usuario si se solicita.
+        try {
+            const usuarioGuardado = localStorage.getItem("ov_usuario");
+
+            if (usuarioGuardado) {
+                username.value = usuarioGuardado;
+                recordarUsuario.checked = true;
+            }
+        } catch (error) {
+            // El formulario funciona aunque el almacenamiento esté bloqueado.
+        }
+
+        // Guardar la preferencia al enviar el formulario.
+        formLogin.addEventListener("submit", function () {
+            try {
+                if (recordarUsuario.checked) {
+                    localStorage.setItem(
+                        "ov_usuario", username.value.trim()
+                    );
+                } else {
+                    localStorage.removeItem("ov_usuario");
+                }
+            } catch (error) {
+                // El inicio de sesión no depende del almacenamiento local.
+            }
+
+            btnLogin.textContent = "Ingresando...";
+            btnLogin.disabled = true;
+        });
+
+        // Si el navegador regresa al formulario mediante el historial,
+        // permite volver a enviar el formulario.
+        window.addEventListener("pageshow", function () {
+            btnLogin.disabled = false;
+            btnLogin.textContent = "Iniciar sesión";
+        });
+    </script>
+</body>
+</html>

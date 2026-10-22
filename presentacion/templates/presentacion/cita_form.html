@@ -1,0 +1,42 @@
+{% extends "presentacion/base.html" %}
+{% block titulo %}Programar cita | Óptica Moda Visual{% endblock %}
+{% block contenido %}
+<div class="pagina-cabecera"><div><h1><i class="fa-solid fa-calendar-plus"></i> Programar cita</h1><p class="subtitulo">Selecciona al paciente, el tipo de cita y el horario.</p></div></div>
+<section class="form-panel">
+<form method="post">
+{% csrf_token %}
+<div class="form-grid">
+  <div class="campo completo"><label for="id_cliente">Paciente *</label>
+    <select id="id_cliente" name="id_cliente" required>
+      <option value="">Selecciona un paciente</option>
+      {% for cliente in clientes %}
+        {% with valor=cliente.id_cliente|stringformat:"s" %}
+        <option value="{{ valor }}" {% if valor == datos.id_cliente or valor == cliente_inicial %}selected{% endif %}>{{ cliente.nombres }} {{ cliente.apellidos }}{% if cliente.dpi %} — {{ cliente.dpi }}{% endif %}</option>
+        {% endwith %}
+      {% endfor %}
+    </select></div>
+  <div class="campo"><label for="id_tipo_cita">Tipo de cita *</label>
+    <select id="id_tipo_cita" name="id_tipo_cita" required>
+      <option value="">Selecciona el tipo</option>
+      {% for tipo in tipos %}
+        {% with valor=tipo.id_tipo_cita|stringformat:"s" %}
+        <option value="{{ valor }}" {% if valor == datos.id_tipo_cita %}selected{% endif %}>{{ tipo.nombre }} — {{ tipo.duracion_minutos }} minutos</option>
+        {% endwith %}
+      {% endfor %}
+    </select></div>
+  <div class="campo"><label for="id_optometrista">Optometrista</label>
+    <select id="id_optometrista" name="id_optometrista">
+      <option value="">Sin asignar</option>
+      {% for usuario in optometristas %}
+        {% with valor=usuario.id_usuario|stringformat:"s" %}
+        <option value="{{ valor }}" {% if valor == datos.id_optometrista %}selected{% endif %}>{{ usuario.nombres }} {{ usuario.apellidos }}</option>
+        {% endwith %}
+      {% endfor %}
+    </select></div>
+  <div class="campo completo"><label for="fecha_hora_inicio">Fecha y hora *</label><input type="datetime-local" id="fecha_hora_inicio" name="fecha_hora_inicio" value="{{ datos.fecha_hora_inicio }}" required><span class="helptext">Selecciona una fecha y hora futura disponible. La hora de fin se calcula según el tipo de cita.</span></div>
+  <div class="campo completo"><label for="motivo">Motivo de la cita</label><textarea id="motivo" name="motivo" rows="3" maxlength="255" placeholder="Describe brevemente el motivo...">{{ datos.motivo }}</textarea></div>
+</div>
+<div class="acciones"><button class="btn btn-azul" type="submit"><i class="fa-solid fa-floppy-disk"></i> Guardar cita</button><a class="btn" href="{% url 'lista_citas' %}"><i class="fa-solid fa-arrow-left"></i> Volver</a></div>
+</form>
+</section>
+{% endblock %}

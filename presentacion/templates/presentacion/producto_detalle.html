@@ -1,0 +1,74 @@
+{% extends "presentacion/base.html" %}
+{% block titulo %}{{ producto.nombre }} | Óptica Moda Visual{% endblock %}
+{% block contenido %}
+<div class="pagina-cabecera">
+  <div>
+    <h1><i class="fa-solid fa-glasses"></i> {{ producto.nombre }}</h1>
+    <p class="subtitulo">{{ producto.codigo }} · {{ categoria|default:"Sin categoría" }}
+      · <span class="estado {% if producto.activo %}e-activo{% else %}e-inactivo{% endif %}">{% if producto.activo %}Activo{% else %}Inactivo{% endif %}</span></p>
+  </div>
+  <div class="botones">
+    <a class="btn" href="{% url 'editar_producto' producto.id_producto %}"><i class="fa-solid fa-pen"></i> Editar</a>
+    <form method="post" action="{% url 'cambiar_activo_producto' producto.id_producto %}">
+      {% csrf_token %}
+      <button class="btn {% if producto.activo %}btn-peligro{% endif %}" type="submit">{% if producto.activo %}<i class="fa-solid fa-ban"></i> Desactivar{% else %}<i class="fa-solid fa-check"></i> Reactivar{% endif %}</button>
+    </form>
+    <a class="btn" href="{% url 'lista_productos' %}"><i class="fa-solid fa-arrow-left"></i> Productos</a>
+  </div>
+</div>
+
+<section class="kpis">
+  <div class="kpi"><small>Existencias</small><strong>{% if producto.es_servicio %}—{% else %}{{ producto.stock_actual }}{% endif %}</strong><small>{% if producto.es_servicio %}Es un servicio{% else %}Mínimo: {{ producto.stock_minimo }}{% endif %}</small></div>
+  <div class="kpi"><small>Precio de venta</small><strong>Q {{ producto.precio_venta|floatformat:2 }}</strong></div>
+  <div class="kpi"><small>Costo</small><strong>Q {{ producto.precio_costo|floatformat:2 }}</strong></div>
+  <div class="kpi"><small>Valor en inventario</small><strong>Q {{ valor_inventario|floatformat:2 }}</strong><small>Existencias × costo</small></div>
+</section>
+
+<div class="grid-2">
+  <section class="panel">
+    <h2><i class="fa-solid fa-circle-info"></i> Información</h2>
+    <dl class="datos">
+      <div><dt>Marca</dt><dd>{{ marca|default:"—" }}</dd></div>
+      <div><dt>Proveedor</dt><dd>{% if proveedor %}{{ proveedor.nombre }}{% else %}—{% endif %}</dd></div>
+      <div><dt>Modelo</dt><dd>{{ producto.modelo|default:"—" }}</dd></div>
+      <div><dt>Color</dt><dd>{{ producto.color|default:"—" }}</dd></div>
+      <div><dt>Material</dt><dd>{{ producto.material|default:"—" }}</dd></div>
+      <div><dt>Registrado</dt><dd>{{ producto.fecha_creacion|date:"d/m/Y" }}</dd></div>
+      <div style="grid-column:1/-1"><dt>Descripción</dt><dd>{{ producto.descripcion|default:"—" }}</dd></div>
+    </dl>
+  </section>
+
+  <section class="panel">
+    <h2><i class="fa-solid fa-right-left"></i> Registrar movimiento</h2>
+    {% if producto.es_servicio %}
+      <p class="muted">Los servicios no manejan inventario.</p>
+    {% else %}
+      <form method="post" action="{% url 'registrar_movimiento' producto.id_producto %}">
+        {% csrf_token %}
+        {% with form=form_movimiento %}{% include "presentacion/_campos.html" %}{% endwith %}
+        <div class="acciones"><button class="btn btn-azul" type="submit"><i class="fa-solid fa-floppy-disk"></i> Guardar movimiento</button></div>
+      </form>
+    {% endif %}
+  </section>
+</div>
+
+<section class="panel" style="margin-top:20px">
+  <h2><i class="fa-solid fa-clock-rotate-left"></i> Últimos movimientos</h2>
+  <div class="tabla-wrap"><table>
+    <thead><tr><th>Fecha</th><th>Tipo</th><th class="derecha">Cantidad</th><th class="derecha">Costo unit.</th><th>Motivo</th></tr></thead>
+    <tbody>
+    {% for m in movimientos %}
+      <tr>
+        <td>{{ m.fecha|date:"d/m/Y H:i" }}</td>
+        <td><span class="estado {% if m.tipo == 'SALIDA' %}e-anulada{% elif m.tipo == 'ENTRADA' %}e-activo{% endif %}">{{ m.tipo }}</span></td>
+        <td class="derecha">{% if m.tipo == 'SALIDA' %}-{% endif %}{{ m.cantidad }}</td>
+        <td class="derecha">{% if m.costo_unitario is not None %}Q {{ m.costo_unitario|floatformat:2 }}{% else %}—{% endif %}</td>
+        <td>{{ m.motivo|default:"—" }}{% if m.id_venta %} · <a href="{% url 'detalle_venta' m.id_venta %}">venta #{{ m.id_venta }}</a>{% endif %}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="5" class="vacio">Sin movimientos registrados.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</section>
+{% endblock %}

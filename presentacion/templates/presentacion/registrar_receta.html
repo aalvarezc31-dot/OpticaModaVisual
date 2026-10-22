@@ -1,0 +1,240 @@
+{% extends "presentacion/base.html" %}
+
+{% block titulo %}Registrar receta óptica | Óptica Moda Visual{% endblock %}
+
+{% block contenido %}
+<style>
+    .contenedor {
+        max-width: 1000px;
+        margin: auto;
+    }
+
+    .encabezado { margin-bottom: 25px; }
+
+    .encabezado h1 {
+        color: #174785;
+        margin-bottom: 8px;
+    }
+
+    .subtitulo { color: #65758b; }
+
+    .tarjeta {
+        background: white;
+        padding: 25px;
+        border-radius: 10px;
+        box-shadow: 0 3px 12px #0000000d;
+        margin-bottom: 22px;
+    }
+
+    .tarjeta h2 {
+        color: #174785;
+        font-size: 19px;
+        margin-top: 0;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #e5eaf0;
+    }
+
+    .rejilla {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+    }
+
+    .campo {
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+    }
+
+    .campo.completo { grid-column: 1 / -1; }
+
+    .campo label {
+        font-weight: 600;
+        color: #263445;
+    }
+
+    .campo input,
+    .campo select,
+    .campo textarea {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 11px;
+        border: 1px solid #ccd5e0;
+        border-radius: 6px;
+        font: inherit;
+    }
+
+    .campo textarea { min-height: 90px; resize: vertical; }
+
+    .errorlist {
+        color: #b42318;
+        margin: 4px 0;
+        padding-left: 20px;
+    }
+
+    .errores {
+        background: #fff0f0;
+        color: #a21b1b;
+        padding: 12px;
+        border-radius: 6px;
+        margin-bottom: 18px;
+    }
+
+    .acciones {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 20px;
+    }
+
+    .boton {
+        display: inline-block;
+        padding: 11px 17px;
+        border: none;
+        border-radius: 6px;
+        background: #174785;
+        color: white;
+        text-decoration: none;
+        cursor: pointer;
+        font-size: 15px;
+    }
+
+    .boton-secundario { background: #65758b; }
+
+    @media (max-width: 600px) {
+        .rejilla { grid-template-columns: 1fr; }
+        .campo.completo { grid-column: auto; }
+        .tarjeta { padding: 17px; }
+    }
+</style>
+
+<div class="contenedor">
+    <div class="encabezado">
+        <h1>Registrar receta óptica</h1>
+        <p class="subtitulo">
+            Ingresa la graduación y las indicaciones correspondientes al examen visual
+            #{{ examen.id_examen }} del {{ examen.fecha_examen|date:"d/m/Y" }}
+            {% if examen.diagnostico %}— {{ examen.diagnostico|truncatechars:80 }}{% endif %}.
+        </p>
+    </div>
+
+
+    {% if form.non_field_errors %}
+        <div class="errores">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="tarjeta">
+            <h2>Graduación del ojo derecho (OD)</h2>
+            <div class="rejilla">
+                <div class="campo">
+                    <label for="{{ form.od_esfera.id_for_label }}">Esfera</label>
+                    {{ form.od_esfera }}
+                    {{ form.od_esfera.errors }}
+                </div>
+
+                <div class="campo">
+                    <label for="{{ form.od_cilindro.id_for_label }}">Cilindro</label>
+                    {{ form.od_cilindro }}
+                    {{ form.od_cilindro.errors }}
+                </div>
+
+                <div class="campo">
+                    <label for="{{ form.od_eje.id_for_label }}">Eje</label>
+                    {{ form.od_eje }}
+                    {{ form.od_eje.errors }}
+                </div>
+
+                <div class="campo">
+                    <label for="{{ form.od_adicion.id_for_label }}">Adición</label>
+                    {{ form.od_adicion }}
+                    {{ form.od_adicion.errors }}
+                </div>
+            </div>
+        </div>
+
+        <div class="tarjeta">
+            <h2>Graduación del ojo izquierdo (OI)</h2>
+            <div class="rejilla">
+                <div class="campo">
+                    <label for="{{ form.oi_esfera.id_for_label }}">Esfera</label>
+                    {{ form.oi_esfera }}
+                    {{ form.oi_esfera.errors }}
+                </div>
+
+                <div class="campo">
+                    <label for="{{ form.oi_cilindro.id_for_label }}">Cilindro</label>
+                    {{ form.oi_cilindro }}
+                    {{ form.oi_cilindro.errors }}
+                </div>
+
+                <div class="campo">
+                    <label for="{{ form.oi_eje.id_for_label }}">Eje</label>
+                    {{ form.oi_eje }}
+                    {{ form.oi_eje.errors }}
+                </div>
+
+                <div class="campo">
+                    <label for="{{ form.oi_adicion.id_for_label }}">Adición</label>
+                    {{ form.oi_adicion }}
+                    {{ form.oi_adicion.errors }}
+                </div>
+            </div>
+        </div>
+
+        <div class="tarjeta">
+            <h2>Detalles de la receta</h2>
+            <div class="rejilla">
+                <div class="campo">
+                    <label for="{{ form.distancia_pupilar.id_for_label }}">
+                        Distancia pupilar
+                    </label>
+                    {{ form.distancia_pupilar }}
+                    {{ form.distancia_pupilar.errors }}
+                </div>
+
+                <div class="campo">
+                    <label for="{{ form.tipo_lente.id_for_label }}">Tipo de lente</label>
+                    {{ form.tipo_lente }}
+                    {{ form.tipo_lente.errors }}
+                </div>
+
+                <div class="campo completo">
+                    <label for="{{ form.tratamiento.id_for_label }}">Tratamiento</label>
+                    {{ form.tratamiento }}
+                    {{ form.tratamiento.errors }}
+                </div>
+
+                <div class="campo completo">
+                    <label for="{{ form.indicaciones.id_for_label }}">Indicaciones</label>
+                    {{ form.indicaciones }}
+                    {{ form.indicaciones.errors }}
+                </div>
+
+                <div class="campo">
+                    <label for="{{ form.fecha_emision.id_for_label }}">Fecha de emisión</label>
+                    {{ form.fecha_emision }}
+                    {{ form.fecha_emision.errors }}
+                </div>
+
+                <div class="campo">
+                    <label for="{{ form.fecha_vencimiento.id_for_label }}">
+                        Fecha de vencimiento
+                    </label>
+                    {{ form.fecha_vencimiento }}
+                    {{ form.fecha_vencimiento.errors }}
+                </div>
+            </div>
+        </div>
+
+        <div class="acciones">
+            <button type="submit" class="boton">Guardar receta</button>
+            <a href="{% url 'detalle_examen' examen.id_examen %}" class="boton boton-secundario">
+                Cancelar
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

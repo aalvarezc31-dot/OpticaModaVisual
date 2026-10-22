@@ -1,0 +1,12 @@
+{# Pinta todos los campos de `form` en la rejilla de dos columnas. #}
+{% if form.non_field_errors %}<div class="mensaje error">{{ form.non_field_errors }}</div>{% endif %}
+<div class="form-grid">
+  {% for field in form %}
+  <p class="{% if field.widget_type == 'textarea' %}completo{% endif %}">
+    <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+    {{ field }}
+    {% if field.help_text %}<span class="helptext">{{ field.help_text }}</span>{% endif %}
+    {% for error in field.errors %}<span class="errorlist">{{ error }}</span>{% endfor %}
+  </p>
+  {% endfor %}
+</div>

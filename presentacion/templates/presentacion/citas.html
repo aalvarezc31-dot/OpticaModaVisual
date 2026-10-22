@@ -1,0 +1,89 @@
+{% extends "presentacion/base.html" %}
+{% block titulo %}Citas | Óptica Moda Visual{% endblock %}
+{% block contenido %}
+<div class="pagina-cabecera">
+  <div><h1><i class="fa-solid fa-calendar-check"></i> Citas</h1><p class="subtitulo">Agenda de pacientes: confirma, atiende o cancela citas.</p></div>
+  <a class="btn btn-azul" href="{% url 'registrar_cita' %}"><i class="fa-solid fa-calendar-plus"></i> Programar cita</a>
+</div>
+<section class="panel">
+  <form class="busqueda" method="get">
+    <input type="search" name="q" value="{{ busqueda }}" placeholder="Buscar por paciente, teléfono, motivo u optometrista...">
+    <select name="estado" aria-label="Estado">
+      <option value="">Todos los estados</option>
+      {% for valor, nombre in estados %}<option value="{{ valor }}" {% if estado == valor %}selected{% endif %}>{{ nombre }}</option>{% endfor %}
+    </select>
+    <input type="date" name="fecha" value="{{ fecha|date:'Y-m-d' }}" aria-label="Fecha">
+    <button class="btn btn-azul"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+    {% if busqueda or estado or fecha %}<a class="btn" href="{% url 'lista_citas' %}">Limpiar</a>{% endif %}
+  </form>
+  <div class="tabla-wrap"><table style="min-width:900px">
+    <thead><tr><th>Paciente</th><th>Fecha y hora</th><th>Optometrista</th><th>Motivo</th><th>Estado</th><th>Acciones</th></tr></thead>
+    <tbody>
+    {% for cita, acciones in filas %}
+      <tr>
+        <td><a href="{% url 'detalle_cliente' cita.id_cliente %}"><strong>{{ cita.cliente_nombre }}</strong></a><br><small>{{ cita.cliente_telefono|default:"" }}</small></td>
+        <td class="nowrap">{{ cita.fecha_hora_inicio|date:"d/m/Y H:i" }} – {{ cita.fecha_hora_fin|date:"H:i" }}</td>
+        <td>{{ cita.usuario_atiende_nombre|default:"—" }}</td>
+        <td>{{ cita.motivo|default:"—" }}{% if cita.motivo_cancelacion %}<br><small>Cancelación: {{ cita.motivo_cancelacion }}</small>{% endif %}</td>
+        <td><span class="estado e-{{ cita.estado|lower }}">{{ cita.estado|upper }}</span></td>
+        <td>
+          <div class="botones">
+          {% for accion in acciones %}
+            {% if accion == 'CANCELADA' %}
+              <button type="button" class="btn btn-sm btn-peligro" data-cancelar="{% url 'cambiar_estado_cita' cita.id_cita %}" title="Cancelar"><i class="fa-solid fa-ban"></i></button>
+            {% else %}
+              <form method="post" action="{% url 'cambiar_estado_cita' cita.id_cita %}">
+                {% csrf_token %}
+                <input type="hidden" name="estado" value="{{ accion }}">
+                <input type="hidden" name="volver" value="{{ request.get_full_path }}">
+                {% if accion == 'CONFIRMADA' %}<button class="btn btn-sm" title="Confirmar"><i class="fa-solid fa-check"></i> Confirmar</button>
+                {% elif accion == 'ATENDIDA' %}<button class="btn btn-sm btn-verde" title="Marcar atendida"><i class="fa-solid fa-user-check"></i> Atendida</button>
+                {% elif accion == 'NO_ASISTIO' %}<button class="btn btn-sm" title="No asistió"><i class="fa-solid fa-user-xmark"></i></button>{% endif %}
+              </form>
+            {% endif %}
+          {% endfor %}
+          {% if cita.estado|upper == 'ATENDIDA' or cita.estado|upper == 'CONFIRMADA' %}
+            <a class="btn btn-sm" href="{% url 'registrar_examen' %}?cita={{ cita.id_cita }}" title="Registrar examen"><i class="fa-solid fa-eye"></i> Examen</a>
+          {% endif %}
+          {% if cita.estado|upper != 'CANCELADA' and cita.estado|upper != 'NO_ASISTIO' %}
+            <form method="post" action="{% url 'cobrar_cita' cita.id_cita %}">
+              {% csrf_token %}
+              <button class="btn btn-sm btn-azul" title="Crear la venta de esta consulta"><i class="fa-solid fa-cash-register"></i> Cobrar</button>
+            </form>
+          {% endif %}
+          </div>
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="6" class="vacio"><i class="fa-regular fa-calendar-xmark"></i><br>No hay citas para mostrar.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% include "presentacion/_paginacion.html" %}
+</section>
+
+<dialog id="dlgCancelar">
+  <h3><i class="fa-solid fa-ban"></i> Cancelar cita</h3>
+  <form method="post" id="formCancelar">
+    {% csrf_token %}
+    <input type="hidden" name="estado" value="CANCELADA">
+    <input type="hidden" name="volver" value="{{ request.get_full_path }}">
+    <div class="campo"><label for="motivoCancelacion">Motivo de la cancelación *</label>
+      <textarea id="motivoCancelacion" name="motivo" rows="3" maxlength="255" required></textarea></div>
+    <div class="acciones">
+      <button class="btn btn-peligro" type="submit">Cancelar cita</button>
+      <button class="btn" type="button" data-cerrar>Volver</button>
+    </div>
+  </form>
+</dialog>
+{% endblock %}
+{% block scripts %}
+<script>
+  document.querySelectorAll("[data-cancelar]").forEach(function (boton) {
+    boton.addEventListener("click", function () {
+      document.getElementById("formCancelar").action = boton.dataset.cancelar;
+      document.getElementById("dlgCancelar").showModal();
+    });
+  });
+</script>
+{% endblock %}

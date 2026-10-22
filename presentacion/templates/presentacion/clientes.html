@@ -1,0 +1,39 @@
+{% extends "presentacion/base.html" %}
+{% block titulo %}Clientes | Óptica Moda Visual{% endblock %}
+{% block contenido %}
+<div class="pagina-cabecera">
+  <div><h1><i class="fa-solid fa-users"></i> Clientes</h1><p class="subtitulo">Consulta y administra la información de tus pacientes.</p></div>
+  <a class="btn btn-azul" href="{% url 'registrar_cliente' %}"><i class="fa-solid fa-user-plus"></i> Nuevo cliente</a>
+</div>
+<section class="panel">
+  <form class="busqueda" method="get">
+    <input type="search" name="q" value="{{ busqueda }}" placeholder="Buscar por nombre, DPI, NIT o teléfono..." aria-label="Buscar clientes">
+    <select name="estado" aria-label="Estado">
+      <option value="activos" {% if estado == 'activos' %}selected{% endif %}>Activos</option>
+      <option value="inactivos" {% if estado == 'inactivos' %}selected{% endif %}>Inactivos</option>
+      <option value="todos" {% if estado == 'todos' %}selected{% endif %}>Todos</option>
+    </select>
+    <button class="btn btn-azul" type="submit"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+    {% if busqueda or estado != 'activos' %}<a class="btn" href="{% url 'lista_clientes' %}">Limpiar</a>{% endif %}
+  </form>
+  <div class="tabla-wrap"><table>
+    <thead><tr><th>Cliente</th><th>DPI</th><th>NIT</th><th>Teléfono</th><th>Correo</th><th></th></tr></thead>
+    <tbody>
+    {% for cliente in pagina %}
+      <tr>
+        <td><a href="{% url 'detalle_cliente' cliente.id_cliente %}"><strong>{{ cliente.nombres }} {{ cliente.apellidos }}</strong></a>{% if not cliente.activo %} <span class="estado e-inactivo">Inactivo</span>{% endif %}</td>
+        <td>{{ cliente.dpi|default:"—" }}</td><td>{{ cliente.nit|default:"—" }}</td>
+        <td>{{ cliente.telefono|default:"—" }}</td><td>{{ cliente.email|default:"—" }}</td>
+        <td class="derecha nowrap">
+          <a class="btn btn-sm" href="{% url 'detalle_cliente' cliente.id_cliente %}" title="Ver ficha"><i class="fa-solid fa-id-card"></i></a>
+          <a class="btn btn-sm" href="{% url 'editar_cliente' cliente.id_cliente %}" title="Editar"><i class="fa-solid fa-pen"></i></a>
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="6" class="vacio"><i class="fa-solid fa-folder-open"></i><br>No se encontraron clientes.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% include "presentacion/_paginacion.html" %}
+</section>
+{% endblock %}

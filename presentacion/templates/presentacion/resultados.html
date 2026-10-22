@@ -1,0 +1,39 @@
+{% extends "presentacion/base.html" %}
+{% block titulo %}Resultados y recetas | Óptica Moda Visual{% endblock %}
+{% block contenido %}
+<div class="pagina-cabecera">
+  <div><h1><i class="fa-solid fa-file-medical"></i> Resultados y recetas</h1><p class="subtitulo">Resultados de cada examen y su receta óptica.</p></div>
+  <a class="btn" href="{% url 'lista_examenes' %}"><i class="fa-solid fa-eye"></i> Ver exámenes</a>
+</div>
+<section class="panel">
+  <form method="get" class="busqueda">
+    <input type="search" name="q" value="{{ busqueda }}" placeholder="Buscar por paciente, diagnóstico, motivo u optometrista">
+    <button class="btn btn-azul" type="submit"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+    {% if busqueda %}<a class="btn" href="{% url 'resultados' %}">Limpiar</a>{% endif %}
+  </form>
+  <div class="tabla-wrap"><table style="min-width:900px">
+    <thead><tr><th>Fecha</th><th>Paciente</th><th>Agudeza visual</th><th>Presión intraocular</th><th>Diagnóstico</th><th>Receta óptica</th></tr></thead>
+    <tbody>
+    {% for examen, cliente, receta in pagina %}
+      <tr>
+        <td class="nowrap"><a href="{% url 'detalle_examen' examen.id_examen %}">{{ examen.fecha_examen|date:"d/m/Y H:i" }}</a></td>
+        <td>{% if cliente %}{{ cliente.nombres }} {{ cliente.apellidos }}{% else %}Paciente no disponible{% endif %}</td>
+        <td class="nowrap"><strong>OD:</strong> {{ examen.agudeza_visual_od|default:"—" }}<br><strong>OI:</strong> {{ examen.agudeza_visual_oi|default:"—" }}</td>
+        <td class="nowrap"><strong>OD:</strong> {{ examen.presion_intraocular_od|default:"—" }}<br><strong>OI:</strong> {{ examen.presion_intraocular_oi|default:"—" }}</td>
+        <td>{{ examen.diagnostico|default:"Pendiente"|truncatechars:70 }}{% if examen.observaciones %}<br><small>{{ examen.observaciones|truncatechars:70 }}</small>{% endif %}</td>
+        <td>
+          {% if receta %}
+            <a class="btn btn-sm" href="{% url 'ver_receta' receta.id_receta %}"><i class="fa-solid fa-prescription"></i> {{ receta.tipo_lente|default:"Ver receta" }}</a>
+          {% else %}
+            <a class="btn btn-sm btn-azul" href="{% url 'registrar_receta' examen.id_examen %}"><i class="fa-solid fa-circle-plus"></i> Registrar receta</a>
+          {% endif %}
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="6" class="vacio">No hay resultados visuales registrados.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% include "presentacion/_paginacion.html" %}
+</section>
+{% endblock %}

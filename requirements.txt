@@ -1,0 +1,4 @@
+Django==5.2.18
+mssql-django==2.0.0
+pyodbc==5.3.0
+tzdata

@@ -1,0 +1,20 @@
+{% extends "presentacion/base.html" %}
+{% block titulo %}{% if producto %}Editar{% else %}Nuevo{% endif %} producto | Óptica Moda Visual{% endblock %}
+{% block contenido %}
+<div class="pagina-cabecera">
+  <div>
+    <h1><i class="fa-solid fa-{% if producto %}pen{% else %}circle-plus{% endif %}"></i> {% if producto %}Editar producto{% else %}Nuevo producto{% endif %}</h1>
+    <p class="subtitulo">{% if producto %}{{ producto.codigo }} · {{ producto.nombre }} — el stock se modifica desde «Movimientos» en la ficha del producto.{% else %}Registra monturas, lentes, accesorios o servicios.{% endif %}</p>
+  </div>
+</div>
+<section class="form-panel">
+  <form method="post">
+    {% csrf_token %}
+    {% include "presentacion/_campos.html" %}
+    <div class="acciones">
+      <button class="btn btn-azul" type="submit"><i class="fa-solid fa-floppy-disk"></i> Guardar producto</button>
+      <a class="btn" href="{% if producto %}{% url 'detalle_producto' producto.id_producto %}{% else %}{% url 'lista_productos' %}{% endif %}"><i class="fa-solid fa-arrow-left"></i> Volver</a>
+    </div>
+  </form>
+</section>
+{% endblock %}
