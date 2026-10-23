@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>{% block titulo %}Óptica Moda Visual{% endblock %}</title>
+
+    <!-- Iconos -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+    <style>
+        :root {
+            --azul: #174785;
+            --azul-hover: #2563a6;
+            --azul-suave: #eaf2ff;
+            --fondo: #f4f7fc;
+            --blanco: #ffffff;
+            --texto: #26364b;
+            --gris: #718096;
+            --borde: #dce5f0;
+            --verde: #166534;
+            --verde-suave: #ecfdf3;
+            --rojo: #b91c1c;
+            --rojo-suave: #fef2f2;
+            --ambar: #92400e;
+            --ambar-suave: #fffbeb;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: var(--fondo);
+            color: var(--texto);
+        }
+
+        /* ENCABEZADO */
+        header {
+            background: var(--blanco);
+            border-bottom: 1px solid var(--borde);
+            padding: 14px 4%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 3px 12px rgba(23, 71, 133, 0.07);
+        }
+
+        .marca {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--azul);
+            min-width: 220px;
+        }
+
+        .logo {
+            width: 46px;
+            height: 46px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--azul-suave);
+            border-radius: 13px;
+            font-size: 25px;
+        }
+
+        .marca h2 {
+            margin: 0;
+            font-size: 19px;
+        }
+
+        .marca small {
+            display: block;
+            margin-top: 4px;
+            color: var(--gris);
+            font-size: 12px;
+        }
+
+        /* MENÚ */
+        .menu {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .menu a,
+        .menu .grupo > span {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 11px 11px;
+            border-radius: 9px;
+            color: var(--texto);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            transition: 0.2s;
+            cursor: pointer;
+        }
+
+        .menu a i,
+        .menu .grupo > span i {
+            color: var(--azul-hover);
+            font-size: 15px;
+        }
+
+        .menu a:hover,
+        .menu a.activo,
+        .menu .grupo:hover > span,
+        .menu .grupo.activo > span {
+            background: var(--azul-suave);
+            color: var(--azul);
+        }
+
+        .menu a.activo,
+        .menu .grupo.activo > span {
+            box-shadow: inset 0 -2px var(--azul);
+        }
+
+        /* SUBMENÚS */
+        .grupo {
+            position: relative;
+        }
+
+        .submenu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            min-width: 220px;
+            padding: 6px;
+            background: var(--blanco);
+            border: 1px solid var(--borde);
+            border-radius: 11px;
+            box-shadow: 0 10px 25px rgba(23, 71, 133, 0.12);
+        }
+
+        .grupo:hover .submenu,
+        .grupo:focus-within .submenu {
+            display: block;
+        }
+
+        .submenu a {
+            font-weight: 500;
+        }
+
+        /* CERRAR SESIÓN */
+        .menu form {
+            margin: 0 0 0 5px;
+        }
+
+        .salir {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 11px 14px;
+            border: none;
+            border-radius: 9px;
+            background: var(--azul);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .salir:hover {
+            background: var(--azul-hover);
+            transform: translateY(-1px);
+        }
+
+        .menu-toggle {
+            display: none;
+            border: none;
+            background: var(--azul-suave);
+            color: var(--azul);
+            padding: 10px 13px;
+            border-radius: 9px;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        /* CONTENIDO */
+        main {
+            width: 100%;
+            max-width: 1500px;
+            min-height: calc(100vh - 100px);
+            margin: auto;
+            padding: 30px 4%;
+        }
+
+        .mensaje {
+            padding: 14px 17px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            background: var(--azul-suave);
+            color: var(--azul);
+            border: 1px solid #c9dcff;
+        }
+
+        .mensaje.success {
+            background: var(--verde-suave);
+            color: var(--verde);
+            border-color: #bbf7d0;
+        }
+
+        .mensaje.error {
+            background: var(--rojo-suave);
+            color: var(--rojo);
+            border-color: #fecaca;
+        }
+
+        button, input, select, textarea {
+            font: inherit;
+        }
+
+        a:focus-visible,
+        button:focus-visible,
+        input:focus-visible,
+        select:focus-visible,
+        textarea:focus-visible {
+            outline: 3px solid #93c5fd;
+            outline-offset: 3px;
+        }
+
+        /* ===== COMPONENTES COMPARTIDOS ===== */
+        .pagina-cabecera{display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;margin-bottom:22px}
+        .pagina-cabecera h1{margin:0;color:var(--azul);font-size:28px}
+        .subtitulo{color:var(--gris);margin:7px 0 0}
+        .muted{color:var(--gris)}
+        .derecha{text-align:right}
+        .nowrap{white-space:nowrap}
+
+        .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 15px;border:0;border-radius:9px;text-decoration:none;font-weight:600;cursor:pointer;font-size:14px;background:var(--azul-suave);color:var(--azul);transition:.2s}
+        .btn:hover{filter:brightness(.96)}
+        .btn-azul{background:var(--azul);color:white}.btn-azul:hover{background:var(--azul-hover)}
+        .btn-verde{background:#15803d;color:white}
+        .btn-peligro{background:var(--rojo-suave);color:var(--rojo);border:1px solid #fecaca}
+        .btn-sm{padding:7px 10px;font-size:12.5px;border-radius:7px}
+        .botones{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+        .botones form{margin:0}
+
+        .panel{background:white;border:1px solid var(--borde);border-radius:15px;padding:20px;box-shadow:0 5px 18px #1747850a;margin-bottom:20px}
+        .panel > h2{margin:0 0 14px;color:var(--azul);font-size:18px;display:flex;align-items:center;gap:9px}
+        .grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+        .grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+        .grid-2 > .panel,.grid-3 > .panel{margin-bottom:0}
+        .apilado > * + *{margin-top:20px}
+
+        .busqueda{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+        .busqueda input[type=search]{flex:1;min-width:200px}
+        .busqueda select,.busqueda input[type=date]{width:auto}
+        .busqueda label.check{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--texto)}
+        .busqueda label.check input{width:auto}
+
+        input,select,textarea{width:100%;padding:11px 12px;border:1px solid #d1ddeb;border-radius:8px;background:white;color:var(--texto)}
+        input[type=checkbox]{width:auto}
+
+        .tabla-wrap{overflow-x:auto}
+        table{width:100%;border-collapse:collapse}
+        .tabla-wrap table{min-width:650px}
+        th,td{text-align:left;padding:12px;border-bottom:1px solid #e7edf5;vertical-align:middle}
+        th{background:#f0f5ff;color:var(--azul);font-size:13px}
+        tbody tr:hover{background:#f8fbff}
+        tfoot td{font-weight:700;border-bottom:0}
+        .vacio{text-align:center;padding:28px;color:var(--gris)}
+        td small{color:var(--gris)}
+
+        .estado{display:inline-block;padding:4px 9px;border-radius:20px;background:var(--azul-suave);color:var(--azul);font-size:12px;font-weight:700;white-space:nowrap}
+        .e-confirmada,.e-pagada,.e-emitida,.e-activo,.e-atendida{background:var(--verde-suave);color:var(--verde)}
+        .e-entregada{background:#e0e7ff;color:#3730a3}
+        .e-pendiente,.e-bajo{background:var(--ambar-suave);color:var(--ambar)}
+        .e-anulada,.e-cancelada,.e-no_asistio,.e-inactivo{background:var(--rojo-suave);color:var(--rojo)}
+
+        .form-panel{max-width:850px;margin:auto;background:white;border:1px solid var(--borde);border-radius:15px;padding:25px;box-shadow:0 5px 18px #1747850a}
+        .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 16px}
+        .form-grid p,.campo{margin:0 0 12px}
+        .form-grid label,.campo label{display:block;font-weight:600;font-size:14px;margin-bottom:7px;color:#34445a}
+        .form-grid .completo{grid-column:1 / -1}
+        .helptext{display:block;color:var(--gris);font-size:12px;margin-top:5px}
+        .errorlist{display:block;color:var(--rojo);font-size:13px;margin-top:4px;padding:0;list-style:none}
+        .acciones{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+
+        .datos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 20px;margin:0}
+        .datos div{min-width:0}
+        .datos dt{font-size:12px;color:var(--gris);font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+        .datos dd{margin:3px 0 0;font-weight:600;overflow-wrap:anywhere}
+
+        .kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px;margin-bottom:20px}
+        .kpi{background:white;border:1px solid var(--borde);border-radius:14px;padding:16px}
+        .kpi small{color:var(--gris);font-weight:600}
+        .kpi strong{display:block;font-size:24px;color:var(--azul);margin-top:6px}
+
+        .paginacion{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:16px;color:var(--gris);font-size:14px}
+
+        dialog{border:0;border-radius:14px;padding:22px;max-width:460px;width:calc(100% - 32px);box-shadow:0 20px 50px #0003}
+        dialog::backdrop{background:#0f172a66}
+        dialog h3{margin-top:0;color:var(--azul)}
+
+        /* RESPONSIVE */
+        @media (max-width: 1150px) {
+            header {
+                flex-wrap: wrap;
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+
+            .menu {
+                display: none;
+                width: 100%;
+                align-items: stretch;
+                flex-direction: column;
+                padding-top: 10px;
+            }
+
+            .menu.abierto {
+                display: flex;
+            }
+
+            .menu a,
+            .menu .grupo > span {
+                width: 100%;
+                padding: 12px;
+            }
+
+            .submenu {
+                display: block;
+                position: static;
+                box-shadow: none;
+                border: 0;
+                padding: 0 0 0 22px;
+            }
+
+            .menu form {
+                margin: 5px 0;
+                width: 100%;
+            }
+
+            .salir {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .kpis, .grid-3 {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 760px) {
+            .grid-2, .grid-3, .kpis, .datos, .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            header {
+                padding: 12px 15px;
+            }
+
+            .marca {
+                min-width: 0;
+            }
+
+            .marca h2 {
+                font-size: 16px;
+            }
+
+            .logo {
+                width: 40px;
+                height: 40px;
+            }
+
+            main {
+                padding: 20px 12px;
+            }
+        }
+
+        @media print {
+            header, .no-imprimir, .mensaje { display: none !important; }
+            main { padding: 0; }
+            body { background: white; }
+            .panel { box-shadow: none; border: 0; }
+        }
+    </style>
+
+    {% block estilos %}{% endblock %}
+</head>
+
+<body>
+    <header>
+        <!-- LOGO Y NOMBRE -->
+        <a class="marca" href="{% url 'inicio' %}">
+            <div class="logo">
+                <i class="fa-solid fa-eye"></i>
+            </div>
+
+            <div>
+                <h2>Óptica Moda Visual</h2>
+                <small>Sistema de gestión visual</small>
+            </div>
+        </a>
+
+        <!-- BOTÓN PARA CELULARES -->
+        <button
+            type="button"
+            class="menu-toggle"
+            id="menuToggle"
+            aria-label="Abrir menú"
+            aria-expanded="false"
+            aria-controls="menuPrincipal">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+
+        <!-- OPCIONES DEL SISTEMA -->
+        <nav class="menu" id="menuPrincipal">
+
+            <a href="{% url 'inicio' %}" class="{% if seccion == 'inicio' %}activo{% endif %}">
+                <i class="fa-solid fa-house"></i> Inicio
+            </a>
+
+            {% if 'clientes' in permisos %}
+            <a href="{% url 'lista_clientes' %}" class="{% if seccion == 'clientes' %}activo{% endif %}">
+                <i class="fa-solid fa-users"></i> Clientes
+            </a>
+            {% endif %}
+
+            {% if 'citas' in permisos %}
+            <a href="{% url 'lista_citas' %}" class="{% if seccion == 'citas' %}activo{% endif %}">
+                <i class="fa-solid fa-calendar-check"></i> Citas
+            </a>
+            {% endif %}
+
+            {% if 'clinica' in permisos %}
+            <div class="grupo {% if seccion == 'clinica' %}activo{% endif %}">
+                <span tabindex="0"><i class="fa-solid fa-eye"></i> Clínica <i class="fa-solid fa-chevron-down" style="font-size:10px"></i></span>
+                <div class="submenu">
+                    <a href="{% url 'lista_examenes' %}"><i class="fa-solid fa-eye"></i> Exámenes visuales</a>
+                    <a href="{% url 'resultados' %}"><i class="fa-solid fa-file-medical"></i> Resultados y recetas</a>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if 'ventas' in permisos %}
+            <a href="{% url 'lista_ventas' %}" class="{% if seccion == 'ventas' %}activo{% endif %}">
+                <i class="fa-solid fa-cash-register"></i> Ventas
+            </a>
+            {% endif %}
+
+            {% if 'facturas' in permisos %}
+            <a href="{% url 'lista_facturas' %}" class="{% if seccion == 'facturas' %}activo{% endif %}">
+                <i class="fa-solid fa-file-invoice-dollar"></i> Facturas
+            </a>
+            {% endif %}
+
+            {% if 'inventario' in permisos %}
+            <div class="grupo {% if seccion == 'inventario' %}activo{% endif %}">
+                <span tabindex="0"><i class="fa-solid fa-boxes-stacked"></i> Inventario <i class="fa-solid fa-chevron-down" style="font-size:10px"></i></span>
+                <div class="submenu">
+                    <a href="{% url 'lista_productos' %}"><i class="fa-solid fa-glasses"></i> Productos</a>
+                    <a href="{% url 'lista_proveedores' %}"><i class="fa-solid fa-truck"></i> Proveedores</a>
+                    <a href="{% url 'catalogos_inventario' %}"><i class="fa-solid fa-tags"></i> Categorías y marcas</a>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if 'reportes' in permisos %}
+            <a href="{% url 'reportes' %}" class="{% if seccion == 'reportes' %}activo{% endif %}">
+                <i class="fa-solid fa-chart-line"></i> Reportes
+            </a>
+            {% endif %}
+
+            {% if request.user.is_staff %}
+            <a href="{{ url_admin }}" target="_blank" rel="noopener" title="Panel administrativo (servidor de aplicación): usuarios, roles e inventario">
+                <i class="fa-solid fa-user-shield"></i> Admin
+            </a>
+            {% endif %}
+
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="salir" title="Sesión de {{ request.user.get_username }}">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    Salir
+                </button>
+            </form>
+        </nav>
+    </header>
+
+    <main>
+        {% for message in messages %}
+            <div class="mensaje {{ message.tags }}" role="status">
+                {{ message }}
+            </div>
+        {% endfor %}
+
+        {% block contenido %}{% endblock %}
+    </main>
+
+    <script>
+        const botonMenu = document.getElementById("menuToggle");
+        const menuPrincipal = document.getElementById("menuPrincipal");
+
+        botonMenu.addEventListener("click", function () {
+            const abierto = menuPrincipal.classList.toggle("abierto");
+
+            botonMenu.setAttribute("aria-expanded", abierto);
+            botonMenu.setAttribute(
+                "aria-label",
+                abierto ? "Cerrar menú" : "Abrir menú"
+            );
+
+            botonMenu.innerHTML = abierto
+                ? '<i class="fa-solid fa-xmark"></i>'
+                : '<i class="fa-solid fa-bars"></i>';
+        });
+
+        // Botones que abren un <dialog>: data-dialogo="id"
+        document.querySelectorAll("[data-dialogo]").forEach(function (boton) {
+            boton.addEventListener("click", function () {
+                document.getElementById(boton.dataset.dialogo).showModal();
+            });
+        });
+        document.querySelectorAll("dialog [data-cerrar]").forEach(function (boton) {
+            boton.addEventListener("click", function () {
+                boton.closest("dialog").close();
+            });
+        });
+    </script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

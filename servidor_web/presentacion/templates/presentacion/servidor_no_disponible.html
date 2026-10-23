@@ -1,0 +1,11 @@
+{% extends "presentacion/base.html" %}
+{% block titulo %}Servidor no disponible | Óptica Moda Visual{% endblock %}
+{% block contenido %}
+<section class="form-panel" style="text-align:center">
+  <h1 style="color:var(--azul)"><i class="fa-solid fa-plug-circle-xmark"></i> No hay conexión con el servidor de aplicación</h1>
+  <p class="subtitulo">La página web funciona, pero no pudo comunicarse con la API que guarda y consulta los datos.</p>
+  <p class="muted"><small>{{ detalle }}</small></p>
+  <p>Verifica que el servidor de aplicación esté encendido (<code>python manage.py runserver 8010</code> en la carpeta <code>servidor_api</code>) y vuelve a intentar.</p>
+  <div class="acciones" style="justify-content:center"><a class="btn btn-azul" href="">Reintentar</a></div>
+</section>
+{% endblock %}

@@ -1,0 +1,199 @@
+{% extends "presentacion/base.html" %}
+{% block titulo %}Reportes y analítica | Óptica Moda Visual{% endblock %}
+{% block estilos %}
+<style>
+.kpis-6{grid-template-columns:repeat(3,minmax(0,1fr))}
+.grafica{position:relative;height:280px}
+.grafica.baja{height:240px}
+.sin-datos{display:flex;align-items:center;justify-content:center;height:100%;color:var(--gris);text-align:center}
+.exportables{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.exportable{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--borde);border-radius:10px}
+.exportable strong{font-size:14px}
+@media(max-width:760px){.kpis-6,.exportables{grid-template-columns:1fr}}
+</style>
+{% endblock %}
+{% block contenido %}
+<div class="pagina-cabecera">
+  <div><h1><i class="fa-solid fa-chart-line"></i> Reportes y analítica</h1><p class="subtitulo">Indicadores del negocio, gráficas interactivas y reportes exportables a Excel o CSV.</p></div>
+  <form method="get" class="botones no-imprimir">
+    <select name="dias" onchange="this.form.submit()" aria-label="Periodo">
+      <option value="7" {% if dias == 7 %}selected{% endif %}>Últimos 7 días</option>
+      <option value="30" {% if dias == 30 %}selected{% endif %}>Últimos 30 días</option>
+      <option value="90" {% if dias == 90 %}selected{% endif %}>Últimos 90 días</option>
+      <option value="365" {% if dias == 365 %}selected{% endif %}>Último año</option>
+    </select>
+    <button class="btn" type="button" onclick="window.print()"><i class="fa-solid fa-print"></i> Imprimir / PDF</button>
+  </form>
+</div>
+
+<section class="kpis kpis-6">
+  <div class="kpi"><small>Vendido en el periodo</small><strong>Q {{ total_periodo|floatformat:2 }}</strong><small>{{ ventas_periodo }} venta(s)</small></div>
+  <div class="kpi"><small>Ticket promedio</small><strong>Q {{ ticket_promedio|floatformat:2 }}</strong><small>Por venta</small></div>
+  <div class="kpi"><small>Saldo por cobrar</small><strong>Q {{ saldo_total|floatformat:2 }}</strong><small>{{ saldos|length }} venta(s) con saldo</small></div>
+  <div class="kpi"><small>Valor del inventario</small><strong>Q {{ valor_inventario|floatformat:2 }}</strong><small>Existencias × costo</small></div>
+  <div class="kpi"><small>Productos con stock bajo</small><strong>{{ stock_bajo|length }}</strong><small>En o bajo el mínimo</small></div>
+  <div class="kpi"><small>Citas del periodo</small><strong>{{ total_citas }}</strong><small>{{ citas_atendidas }} atendida(s)</small></div>
+</section>
+
+<div class="grid-2">
+  <section class="panel">
+    <h2><i class="fa-solid fa-chart-line"></i> Ventas diarias</h2>
+    <div class="grafica"><canvas id="graficaDiarias" aria-label="Ventas diarias"></canvas></div>
+  </section>
+  <section class="panel">
+    <h2><i class="fa-solid fa-chart-pie"></i> Ventas por categoría</h2>
+    <div class="grafica"><canvas id="graficaCategorias" aria-label="Ventas por categoría"></canvas></div>
+  </section>
+</div>
+
+<div class="grid-3" style="margin-top:20px">
+  <section class="panel">
+    <h2><i class="fa-solid fa-trophy"></i> Productos más vendidos</h2>
+    <div class="grafica baja"><canvas id="graficaProductos" aria-label="Productos más vendidos"></canvas></div>
+  </section>
+  <section class="panel">
+    <h2><i class="fa-solid fa-user-tie"></i> Ventas por vendedor</h2>
+    <div class="grafica baja"><canvas id="graficaVendedores" aria-label="Ventas por vendedor"></canvas></div>
+  </section>
+  <section class="panel">
+    <h2><i class="fa-solid fa-calendar-check"></i> Citas por estado</h2>
+    <div class="grafica baja"><canvas id="graficaCitas" aria-label="Citas por estado"></canvas></div>
+  </section>
+</div>
+
+<section class="panel no-imprimir" style="margin-top:20px">
+  <h2><i class="fa-solid fa-file-export"></i> Reportes exportables</h2>
+  <p class="muted" style="margin-top:-6px">Los reportes de ventas y citas usan el periodo seleccionado arriba (últimos {{ dias }} días).</p>
+  <div class="exportables">
+    {% for nombre, titulo in reportes_exportables %}
+      <div class="exportable">
+        <strong>{{ titulo }}</strong>
+        <div class="botones">
+          <a class="btn btn-sm btn-verde" href="{% url 'exportar_reporte' nombre %}?dias={{ dias }}"><i class="fa-solid fa-file-excel"></i> Excel</a>
+          <a class="btn btn-sm" href="{% url 'exportar_reporte' nombre %}?dias={{ dias }}&formato=csv"><i class="fa-solid fa-file-csv"></i> CSV</a>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+
+<div class="grid-2" style="margin-top:20px">
+  <section class="panel">
+    <h2><i class="fa-solid fa-hand-holding-dollar"></i> Saldos por cobrar</h2>
+    <div class="tabla-wrap"><table style="min-width:0">
+      <thead><tr><th>Venta</th><th>Cliente</th><th class="derecha">Total</th><th class="derecha">Saldo</th></tr></thead>
+      <tbody>
+      {% for s in saldos %}
+        <tr><td><a href="{% url 'detalle_venta' s.id_venta %}">#{{ s.id_venta }}</a><br><small>{{ s.fecha_venta|date:"d/m/Y" }}</small></td><td>{{ s.cliente_nombre }}</td><td class="derecha">Q {{ s.total|floatformat:2 }}</td><td class="derecha"><strong>Q {{ s.saldo|floatformat:2 }}</strong></td></tr>
+      {% empty %}
+        <tr><td colspan="4" class="vacio">No hay saldos pendientes.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  </section>
+
+  <section class="panel">
+    <h2><i class="fa-solid fa-triangle-exclamation"></i> Stock bajo</h2>
+    <div class="tabla-wrap"><table style="min-width:0">
+      <thead><tr><th>Producto</th><th>Proveedor</th><th class="derecha">Stock</th></tr></thead>
+      <tbody>
+      {% for p in stock_bajo %}
+        <tr><td><a href="{% url 'detalle_producto' p.id_producto %}">{{ p.codigo }} · {{ p.nombre }}</a><br><small>{{ p.categoria }}</small></td><td>{{ p.proveedor|default:"—" }}<br><small>{{ p.telefono_proveedor|default:"" }}</small></td><td class="derecha"><span class="estado e-bajo">{{ p.stock_actual }} / {{ p.stock_minimo }}</span></td></tr>
+      {% empty %}
+        <tr><td colspan="3" class="vacio">Todo el inventario está sobre el mínimo.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  </section>
+</div>
+
+{{ graficas|json_script:"datos-graficas" }}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+(function () {
+  const datos = JSON.parse(document.getElementById("datos-graficas").textContent);
+  const azul = "#174785", paleta = ["#174785", "#2563a6", "#0ea5a4", "#f59e0b", "#8b5cf6", "#ef4444", "#10b981", "#64748b"];
+  const quetzales = v => "Q " + Number(v).toLocaleString("es-GT", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+  function sinDatos(id, texto) {
+    const lienzo = document.getElementById(id);
+    lienzo.parentElement.innerHTML = '<div class="sin-datos">' + texto + "</div>";
+  }
+
+  if (typeof Chart === "undefined") {
+    ["graficaDiarias", "graficaCategorias", "graficaProductos", "graficaVendedores", "graficaCitas"]
+      .forEach(id => sinDatos(id, "No se pudo cargar la librería de gráficas (¿sin internet?)."));
+    return;
+  }
+  Chart.defaults.font.family = '"Segoe UI", Arial, sans-serif';
+  Chart.defaults.color = "#4a5568";
+
+  // 1. Ventas diarias: total vendido (línea) y número de ventas (barras)
+  if (datos.diarias.etiquetas.length) {
+    new Chart(document.getElementById("graficaDiarias"), {
+      data: {
+        labels: datos.diarias.etiquetas,
+        datasets: [
+          {type: "line", label: "Total vendido (Q)", data: datos.diarias.totales, borderColor: azul,
+           backgroundColor: "rgba(23,71,133,.12)", fill: true, tension: .3, yAxisID: "q"},
+          {type: "bar", label: "Número de ventas", data: datos.diarias.cantidades,
+           backgroundColor: "rgba(14,165,164,.45)", yAxisID: "n"},
+        ],
+      },
+      options: {
+        maintainAspectRatio: false, interaction: {mode: "index", intersect: false},
+        scales: {
+          q: {position: "left", beginAtZero: true, ticks: {callback: v => "Q " + v}},
+          n: {position: "right", beginAtZero: true, grid: {drawOnChartArea: false}, ticks: {precision: 0}},
+        },
+        plugins: {tooltip: {callbacks: {label: c => c.dataset.yAxisID === "q" ? "Total: " + quetzales(c.raw) : "Ventas: " + c.raw}}},
+      },
+    });
+  } else { sinDatos("graficaDiarias", "Sin ventas confirmadas en el periodo."); }
+
+  // 2. Ventas por categoría
+  if (datos.categorias.etiquetas.length) {
+    new Chart(document.getElementById("graficaCategorias"), {
+      type: "doughnut",
+      data: {labels: datos.categorias.etiquetas, datasets: [{data: datos.categorias.montos, backgroundColor: paleta}]},
+      options: {maintainAspectRatio: false, plugins: {legend: {position: "right"},
+        tooltip: {callbacks: {label: c => c.label + ": " + quetzales(c.raw)}}}},
+    });
+  } else { sinDatos("graficaCategorias", "Sin ventas en el periodo."); }
+
+  // 3. Productos más vendidos (barras horizontales)
+  if (datos.productos.etiquetas.length) {
+    new Chart(document.getElementById("graficaProductos"), {
+      type: "bar",
+      data: {labels: datos.productos.etiquetas, datasets: [{label: "Unidades", data: datos.productos.unidades, backgroundColor: azul}]},
+      options: {indexAxis: "y", maintainAspectRatio: false, plugins: {legend: {display: false}},
+        scales: {x: {beginAtZero: true, ticks: {precision: 0}}, y: {ticks: {callback: function (v) { const t = this.getLabelForValue(v); return t.length > 22 ? t.slice(0, 21) + "…" : t; }}}}},
+    });
+  } else { sinDatos("graficaProductos", "Todavía no hay productos vendidos."); }
+
+  // 4. Ventas por vendedor
+  if (datos.vendedores.etiquetas.length) {
+    new Chart(document.getElementById("graficaVendedores"), {
+      type: "bar",
+      data: {labels: datos.vendedores.etiquetas, datasets: [{label: "Total vendido", data: datos.vendedores.montos, backgroundColor: "#2563a6"}]},
+      options: {maintainAspectRatio: false, plugins: {legend: {display: false}, tooltip: {callbacks: {label: c => quetzales(c.raw)}}},
+        scales: {y: {beginAtZero: true, ticks: {callback: v => "Q " + v}}}},
+    });
+  } else { sinDatos("graficaVendedores", "Sin ventas registradas."); }
+
+  // 5. Citas por estado
+  if (datos.citas.etiquetas.length) {
+    const colores = {PROGRAMADA: "#2563a6", CONFIRMADA: "#0ea5a4", ATENDIDA: "#10b981", CANCELADA: "#ef4444", NO_ASISTIO: "#f59e0b"};
+    new Chart(document.getElementById("graficaCitas"), {
+      type: "pie",
+      data: {labels: datos.citas.etiquetas, datasets: [{data: datos.citas.cantidades,
+        backgroundColor: datos.citas.etiquetas.map(e => colores[e] || "#64748b")}]},
+      options: {maintainAspectRatio: false, plugins: {legend: {position: "bottom"}}},
+    });
+  } else { sinDatos("graficaCitas", "Sin citas en el periodo."); }
+})();
+</script>
+{% endblock %}
