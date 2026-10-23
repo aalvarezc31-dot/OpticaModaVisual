@@ -36,6 +36,8 @@ class MovimientoInventario(models.Model):
     class Meta:
         managed = False
         db_table = "[inventario].[movimiento_inventario]"
+        verbose_name = "movimiento de inventario"
+        verbose_name_plural = "movimientos de inventario"
 
 
 class Producto(models.Model):
@@ -52,7 +54,7 @@ class Producto(models.Model):
     es_servicio = models.BooleanField()
     precio_costo = models.DecimalField(max_digits=12, decimal_places=2)
     precio_venta = models.DecimalField(max_digits=12, decimal_places=2)
-    stock_actual = models.IntegerField()
+    stock_actual = models.IntegerField(verbose_name="existencias")
     stock_minimo = models.IntegerField()
     activo = models.BooleanField()
     fecha_creacion = models.DateTimeField()
@@ -60,6 +62,11 @@ class Producto(models.Model):
     class Meta:
         managed = False
         db_table = "[inventario].[producto]"
+        verbose_name = "producto"
+        verbose_name_plural = "productos"
+
+    def __str__(self):
+        return f"{self.codigo} · {self.nombre}"
 
 
 class Proveedor(models.Model):

@@ -88,6 +88,10 @@ Accesible desde el menú **Admin** para usuarios con permiso de staff
   `seguridad.usuario`. El rol y el estado se cambian en la misma lista
   (botón *Guardar*). El botón *Agregar cuentas de login que faltan* trae las
   cuentas de Django que aún no tienen usuario del sistema.
+- **Productos**: lista con existencias, filtros por categoría y stock bajo. Al editar,
+  el campo *Nuevas existencias* deja el stock en ese número registrando un movimiento
+  de AJUSTE por la diferencia (con su motivo). Los productos no se borran: se desactivan.
+- **Movimientos de inventario**: historial de entradas, salidas y ajustes (solo lectura).
 - **Usuarios** de Django (cuentas de login) con la columna *Rol en el sistema*.
   Al crear o guardar una cuenta se crea/actualiza su usuario del sistema
   (ADMINISTRADOR si es superusuario, si no VENDEDOR).

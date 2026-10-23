@@ -48,6 +48,11 @@ def _validar(datos, excluir_id=None):
         )
 
 
+def validar(datos, excluir_id=None):
+    """Reglas de código único y precio; lanza ReglaNegocioError."""
+    _validar(datos, excluir_id)
+
+
 def registrar(user, datos):
     """
     Registra un producto activo.
@@ -119,6 +124,30 @@ def ficha(id_producto):
         "valor_inventario": producto.stock_actual * producto.precio_costo,
         "movimientos": repo_inventario.movimientos_de_producto(id_producto),
     }
+
+
+def ajustar_stock(user, id_producto, nuevo_stock, motivo=""):
+    """
+    Deja las existencias en `nuevo_stock` registrando un movimiento de AJUSTE
+    por la diferencia (en la BD el stock solo cambia con movimientos).
+    Devuelve la diferencia aplicada (0 si no hubo cambio).
+    """
+    producto = obtener(id_producto)
+
+    if nuevo_stock is None or nuevo_stock == producto.stock_actual:
+        return 0
+
+    if nuevo_stock < 0:
+        raise ReglaNegocioError("Las existencias no pueden ser negativas.", campo="stock_nuevo")
+
+    diferencia = nuevo_stock - producto.stock_actual
+    registrar_movimiento(user, id_producto, {
+        "tipo": repo_inventario.AJUSTE,
+        "cantidad": diferencia,
+        "costo_unitario": None,
+        "motivo": (motivo or "").strip() or "Ajuste desde el panel administrativo",
+    })
+    return diferencia
 
 
 def registrar_movimiento(user, id_producto, datos):
