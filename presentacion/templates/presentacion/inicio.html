@@ -327,6 +327,7 @@
             <p>Citas no canceladas para hoy</p>
         </article>
 
+        {% if 'ventas' in permisos %}
         <article class="metrica">
             <div class="metrica-top">
                 <small>Ventas de hoy</small>
@@ -343,7 +344,9 @@
                 {% endif %}
             </p>
         </article>
+        {% endif %}
 
+        {% if 'inventario' in permisos %}
         <article class="metrica">
             <div class="metrica-top">
                 <small>Inventario</small>
@@ -360,6 +363,7 @@
                 {% endif %}
             </p>
         </article>
+        {% endif %}
 
     </section>
 
@@ -462,21 +466,25 @@
                 </span>
             </a>
 
-            <a class="atajo" href="{% url 'nueva_venta' %}">
+            {% if 'ventas' in permisos %}
+<a class="atajo" href="{% url 'nueva_venta' %}">
                 <i class="fa-solid fa-cart-plus"></i>
                 <span>
                     <strong>Nueva venta</strong>
                     <small>Lentes, monturas y servicios</small>
                 </span>
             </a>
+        {% endif %}
 
-            <a class="atajo" href="{% url 'registrar_producto' %}">
+            {% if 'inventario' in permisos %}
+<a class="atajo" href="{% url 'registrar_producto' %}">
                 <i class="fa-solid fa-circle-plus"></i>
                 <span>
                     <strong>Nuevo producto</strong>
                     <small>Agregar al inventario</small>
                 </span>
             </a>
+        {% endif %}
 
         </div>
     </section>

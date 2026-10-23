@@ -7,7 +7,7 @@ Panel administrativo de Django (/admin/).
   crea o actualiza su usuario del sistema con el mismo username.
 """
 from django import forms
-from django.db import models
+from django.db import IntegrityError, models
 from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.hashers import make_password
@@ -124,6 +124,19 @@ class CuentaLoginAdmin(UserAdmin):
     list_display = ["username", "first_name", "last_name", "email", "rol_sistema",
                     "is_active", "is_staff", "is_superuser"]
     actions = ["enlazar_con_sistema"]
+
+    def add_view(self, request, form_url="", extra_context=None):
+        try:
+            return super().add_view(request, form_url, extra_context)
+        except IntegrityError:
+            # Dos envíos casi simultáneos del mismo formulario: el primero ya lo creó.
+            self.message_user(
+                request,
+                "Ese nombre de usuario ya existe (el formulario se envió dos veces). "
+                "Búscalo en la lista para editarlo.",
+                messages.WARNING,
+            )
+            return redirect("admin:auth_user_changelist")
 
     @admin.display(description="Rol en el sistema")
     def rol_sistema(self, cuenta):

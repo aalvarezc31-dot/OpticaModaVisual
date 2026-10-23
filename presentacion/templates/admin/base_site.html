@@ -1,0 +1,22 @@
+{% extends "admin/base_site.html" %}
+
+{% block extrahead %}
+{{ block.super }}
+<script>
+  // Evita guardar dos veces el mismo formulario (doble clic en "Guardar").
+  document.addEventListener("submit", function (evento) {
+    const formulario = evento.target;
+    if (formulario.dataset.enviado) {
+      evento.preventDefault();
+      return;
+    }
+    formulario.dataset.enviado = "1";
+    setTimeout(function () {
+      formulario.querySelectorAll("input[type=submit], button[type=submit]").forEach(function (boton) {
+        boton.disabled = true;
+        boton.style.opacity = "0.6";
+      });
+    }, 0);
+  });
+</script>
+{% endblock %}

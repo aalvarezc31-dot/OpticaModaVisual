@@ -45,7 +45,7 @@
           {% if cita.estado|upper == 'ATENDIDA' or cita.estado|upper == 'CONFIRMADA' %}
             <a class="btn btn-sm" href="{% url 'registrar_examen' %}?cita={{ cita.id_cita }}" title="Registrar examen"><i class="fa-solid fa-eye"></i> Examen</a>
           {% endif %}
-          {% if cita.estado|upper != 'CANCELADA' and cita.estado|upper != 'NO_ASISTIO' %}
+          {% if 'ventas' in permisos and cita.estado|upper != 'CANCELADA' and cita.estado|upper != 'NO_ASISTIO' %}
             <form method="post" action="{% url 'cobrar_cita' cita.id_cita %}">
               {% csrf_token %}
               <button class="btn btn-sm btn-azul" title="Crear la venta de esta consulta"><i class="fa-solid fa-cash-register"></i> Cobrar</button>

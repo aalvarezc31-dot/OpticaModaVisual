@@ -1,6 +1,7 @@
 """Datos disponibles en todas las plantillas."""
+from negocio.servicios import permisos
 
-# Primer segmento de la URL -> sección del menú que se marca como activa.
+# Primer segmento de la URL -> sección del sistema.
 SECCIONES = {
     "": "inicio",
     "clientes": "clientes",
@@ -17,6 +18,25 @@ SECCIONES = {
 }
 
 
+def seccion_de_ruta(path):
+    segmentos = path.strip("/").split("/")
+
+    # Cobrar una cita crea una venta: pertenece a Ventas.
+    if segmentos[0] == "citas" and segmentos[-1] == "cobrar":
+        return "ventas"
+
+    return SECCIONES.get(segmentos[0], "")
+
+
+def secciones_del_usuario(request):
+    """Secciones permitidas, calculadas una sola vez por petición."""
+    if not hasattr(request, "_secciones_permitidas"):
+        request._secciones_permitidas = permisos.secciones_permitidas(request.user)
+    return request._secciones_permitidas
+
+
 def seccion_actual(request):
-    primer_segmento = request.path.strip("/").split("/")[0]
-    return {"seccion": SECCIONES.get(primer_segmento, "")}
+    return {
+        "seccion": seccion_de_ruta(request.path),
+        "permisos": secciones_del_usuario(request) if hasattr(request, "user") else frozenset(),
+    }

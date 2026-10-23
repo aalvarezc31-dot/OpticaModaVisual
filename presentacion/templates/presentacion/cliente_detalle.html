@@ -9,7 +9,7 @@
   </div>
   <div class="botones">
     {% if cliente.activo %}
-    <a class="btn btn-azul" href="{% url 'nueva_venta' %}?cliente={{ cliente.id_cliente }}"><i class="fa-solid fa-cart-plus"></i> Nueva venta</a>
+    {% if 'ventas' in permisos %}<a class="btn btn-azul" href="{% url 'nueva_venta' %}?cliente={{ cliente.id_cliente }}"><i class="fa-solid fa-cart-plus"></i> Nueva venta</a>{% endif %}
     <a class="btn" href="{% url 'registrar_cita' %}?cliente={{ cliente.id_cliente }}"><i class="fa-solid fa-calendar-plus"></i> Cita</a>
     <a class="btn" href="{% url 'registrar_examen' %}?cliente={{ cliente.id_cliente }}"><i class="fa-solid fa-eye"></i> Examen</a>
     {% endif %}
@@ -27,8 +27,10 @@
 <section class="kpis">
   <div class="kpi"><small>Exámenes</small><strong>{{ resumen.total_examenes|default:0 }}</strong><small>{% if resumen.ultimo_examen %}Último: {{ resumen.ultimo_examen|date:"d/m/Y" }}{% else %}Sin exámenes{% endif %}</small></div>
   <div class="kpi"><small>Citas atendidas</small><strong>{{ resumen.citas_atendidas|default:0 }}</strong><small>No asistió: {{ resumen.citas_no_asistidas|default:0 }}</small></div>
+  {% if 'ventas' in permisos %}
   <div class="kpi"><small>Compras</small><strong>{{ resumen.total_compras|default:0 }}</strong><small>{% if resumen.ultima_compra %}Última: {{ resumen.ultima_compra|date:"d/m/Y" }}{% else %}Sin compras{% endif %}</small></div>
   <div class="kpi"><small>Monto comprado</small><strong>Q {{ resumen.monto_comprado|default:0|floatformat:2 }}</strong><small>Ventas confirmadas</small></div>
+  {% endif %}
 </section>
 {% endif %}
 
@@ -80,6 +82,7 @@
   </table></div>
 </section>
 
+{% if 'ventas' in permisos %}
 <section class="panel">
   <h2><i class="fa-solid fa-cash-register"></i> Últimas ventas</h2>
   <div class="tabla-wrap"><table>
@@ -98,4 +101,5 @@
     </tbody>
   </table></div>
 </section>
+{% endif %}
 {% endblock %}

@@ -96,6 +96,19 @@ Accesible desde el menú **Admin** para usuarios con permiso de staff
   Al crear o guardar una cuenta se crea/actualiza su usuario del sistema
   (ADMINISTRADOR si es superusuario, si no VENDEDOR).
 
+## Permisos por rol
+
+Definidos en `negocio/servicios/permisos.py` (`SECCIONES_POR_ROL`):
+
+| Rol | Ve |
+|---|---|
+| ADMINISTRADOR, VENDEDOR, superusuarios | Todo |
+| OPTOMETRISTA | Inicio (sin montos), Clientes, Citas y Clínica (exámenes, resultados, recetas) |
+
+`presentacion/middleware.py → PermisosPorRolMiddleware` bloquea las secciones no
+permitidas aunque se escriba la URL; las plantillas ocultan menú, botones y montos
+con `{% if 'ventas' in permisos %}`. Para restringir otro rol, agrégalo al diccionario.
+
 ## Usuario que registra las operaciones
 
 El login usa las cuentas de Django (`auth_user`). Las operaciones se guardan a

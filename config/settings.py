@@ -53,6 +53,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'presentacion.middleware.RecursoNoEncontradoMiddleware',
+    'presentacion.middleware.PermisosPorRolMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -60,7 +61,8 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        # Primero las plantillas propias: permite personalizar las del admin.
+        'DIRS': [BASE_DIR / 'presentacion' / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
