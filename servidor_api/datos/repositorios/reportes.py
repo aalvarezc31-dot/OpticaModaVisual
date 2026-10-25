@@ -1,5 +1,12 @@
-"""Consultas a las vistas del esquema [reportes] de la base de datos."""
+"""
+Consultas de reportes: vistas del esquema [reportes] y consultas sobre ventas,
+inventario y citas. Los reportes de un periodo reciben `desde` y `hasta`
+(fechas, ambos inclusive).
+"""
 from django.db import connection
+
+# Ventas que cuentan como vendidas (confirmadas en adelante).
+VENTA_VALIDA = "v.estado NOT IN (N'PENDIENTE', N'ANULADA')"
 
 
 def _consultar(sql, parametros=()):
@@ -9,28 +16,73 @@ def _consultar(sql, parametros=()):
         return [dict(zip(columnas, fila)) for fila in cursor.fetchall()]
 
 
-def ventas_diarias(desde):
+def ventas_diarias(desde, hasta):
     return _consultar(
         "SELECT fecha, cantidad_ventas, subtotal, descuentos, total_vendido "
-        "FROM reportes.vw_ventas_diarias WHERE fecha >= %s ORDER BY fecha DESC",
-        [desde],
+        "FROM reportes.vw_ventas_diarias WHERE fecha BETWEEN %s AND %s ORDER BY fecha DESC",
+        [desde, hasta],
     )
 
 
-def ventas_por_vendedor():
+def ventas_por_agente(desde, hasta):
+    """Ventas por agente (columna vendedor_* de la BD) en el periodo."""
     return _consultar(
-        "SELECT vendedor_nombre, cantidad_ventas, total_vendido "
-        "FROM reportes.vw_ventas_por_vendedor ORDER BY total_vendido DESC"
+        "SELECT v.vendedor_nombre AS agente_nombre, COUNT(*) AS cantidad_ventas, "
+        "SUM(v.total) AS total_vendido FROM ventas.venta v "
+        f"WHERE {VENTA_VALIDA} AND CAST(v.fecha_venta AS date) BETWEEN %s AND %s "
+        "GROUP BY v.vendedor_nombre ORDER BY total_vendido DESC",
+        [desde, hasta],
     )
 
 
-def productos_mas_vendidos(limite=10):
+def productos_mas_vendidos(desde, hasta, limite=10):
+    """Productos (no servicios) con más unidades vendidas en el periodo."""
     return _consultar(
-        "SELECT TOP (%s) codigo, nombre, unidades_vendidas, ingresos "
-        "FROM reportes.vw_productos_mas_vendidos ORDER BY unidades_vendidas DESC",
-        [limite],
+        "SELECT TOP (%s) p.codigo, p.nombre, SUM(dv.cantidad) AS unidades_vendidas, "
+        "SUM(dv.subtotal) AS ingresos "
+        "FROM ventas.detalle_venta dv "
+        "JOIN ventas.venta v ON v.id_venta = dv.id_venta "
+        "JOIN inventario.producto p ON p.id_producto = dv.id_producto "
+        f"WHERE {VENTA_VALIDA} AND dv.es_servicio = 0 "
+        "AND CAST(v.fecha_venta AS date) BETWEEN %s AND %s "
+        "GROUP BY p.codigo, p.nombre ORDER BY unidades_vendidas DESC",
+        [limite, desde, hasta],
     )
 
+
+def ventas_por_categoria(desde, hasta):
+    """Monto vendido por categoría de producto en el periodo."""
+    return _consultar(
+        "SELECT c.nombre AS categoria, SUM(dv.cantidad) AS unidades, SUM(dv.subtotal) AS monto "
+        "FROM ventas.detalle_venta dv "
+        "JOIN ventas.venta v ON v.id_venta = dv.id_venta "
+        "JOIN inventario.producto p ON p.id_producto = dv.id_producto "
+        "JOIN inventario.categoria_producto c ON c.id_categoria = p.id_categoria "
+        f"WHERE {VENTA_VALIDA} AND CAST(v.fecha_venta AS date) BETWEEN %s AND %s "
+        "GROUP BY c.nombre ORDER BY monto DESC",
+        [desde, hasta],
+    )
+
+
+def citas_por_estado(desde, hasta):
+    return _consultar(
+        "SELECT UPPER(estado) AS estado, COUNT(*) AS cantidad FROM citas.cita "
+        "WHERE CAST(fecha_hora_inicio AS date) BETWEEN %s AND %s "
+        "GROUP BY UPPER(estado) ORDER BY cantidad DESC",
+        [desde, hasta],
+    )
+
+
+def citas_del_periodo(desde, hasta):
+    return _consultar(
+        "SELECT fecha_hora_inicio, tipo_cita, cliente_nombre, cliente_telefono, "
+        "usuario_atiende_nombre, estado FROM reportes.vw_agenda_citas "
+        "WHERE CAST(fecha_hora_inicio AS date) BETWEEN %s AND %s ORDER BY fecha_hora_inicio",
+        [desde, hasta],
+    )
+
+
+# --- Reportes al día (no dependen del periodo) ---
 
 def stock_bajo():
     return _consultar(
@@ -54,37 +106,6 @@ def historial_cliente(id_cliente):
         [id_cliente],
     )
     return filas[0] if filas else None
-
-
-def ventas_por_categoria(desde):
-    """Monto vendido por categoría de producto (ventas confirmadas en adelante)."""
-    return _consultar(
-        "SELECT c.nombre AS categoria, SUM(dv.cantidad) AS unidades, SUM(dv.subtotal) AS monto "
-        "FROM ventas.detalle_venta dv "
-        "JOIN ventas.venta v ON v.id_venta = dv.id_venta "
-        "JOIN inventario.producto p ON p.id_producto = dv.id_producto "
-        "JOIN inventario.categoria_producto c ON c.id_categoria = p.id_categoria "
-        "WHERE v.estado NOT IN (N'PENDIENTE', N'ANULADA') AND CAST(v.fecha_venta AS date) >= %s "
-        "GROUP BY c.nombre ORDER BY monto DESC",
-        [desde],
-    )
-
-
-def citas_por_estado(desde):
-    return _consultar(
-        "SELECT UPPER(estado) AS estado, COUNT(*) AS cantidad FROM citas.cita "
-        "WHERE CAST(fecha_hora_inicio AS date) >= %s GROUP BY UPPER(estado) ORDER BY cantidad DESC",
-        [desde],
-    )
-
-
-def citas_del_periodo(desde):
-    return _consultar(
-        "SELECT fecha_hora_inicio, tipo_cita, cliente_nombre, cliente_telefono, "
-        "usuario_atiende_nombre, estado FROM reportes.vw_agenda_citas "
-        "WHERE CAST(fecha_hora_inicio AS date) >= %s ORDER BY fecha_hora_inicio",
-        [desde],
-    )
 
 
 def inventario_valorizado():

@@ -28,15 +28,17 @@
   </dl>
 
   <table>
-    <thead><tr><th>#</th><th>Descripción</th><th class="derecha">Cant.</th><th class="derecha">Precio</th><th class="derecha">Desc.</th><th class="derecha">Total</th></tr></thead>
+    <thead><tr><th>#</th><th>Descripción</th><th class="derecha">Cant.</th><th class="derecha">Precio</th><th class="derecha">Importe</th><th class="derecha">Descuento</th><th class="derecha">Total</th></tr></thead>
     <tbody>
     {% for l in lineas %}
-      <tr><td>{{ l.linea }}</td><td>{{ l.descripcion }}</td><td class="derecha">{{ l.cantidad }}</td><td class="derecha">Q {{ l.precio_unitario|floatformat:2 }}</td><td class="derecha">Q {{ l.descuento|floatformat:2 }}</td><td class="derecha">Q {{ l.total|floatformat:2 }}</td></tr>
+      <tr><td>{{ l.linea }}</td><td>{{ l.descripcion }}</td><td class="derecha">{{ l.cantidad }}</td><td class="derecha">Q {{ l.precio_unitario|floatformat:2 }}</td><td class="derecha">Q {{ l.importe|floatformat:2 }}</td><td class="derecha" style="color:var(--rojo)">{% if l.descuento %}- Q {{ l.descuento|floatformat:2 }}{% else %}—{% endif %}</td><td class="derecha">Q {{ l.total|floatformat:2 }}</td></tr>
     {% endfor %}
     </tbody>
     <tfoot>
-      <tr><td colspan="5" class="derecha">IVA incluido (12 %)</td><td class="derecha">Q {{ factura.monto_iva|floatformat:2 }}</td></tr>
-      <tr><td colspan="5" class="derecha">TOTAL</td><td class="derecha">Q {{ factura.total|floatformat:2 }}</td></tr>
+      <tr><td colspan="6" class="derecha" style="font-weight:600">Subtotal</td><td class="derecha">Q {{ desglose.bruto|floatformat:2 }}</td></tr>
+      <tr><td colspan="6" class="derecha" style="font-weight:600;color:var(--rojo)">Descuento aplicado</td><td class="derecha" style="color:var(--rojo)">- Q {{ desglose.descuento_total|floatformat:2 }}</td></tr>
+      <tr><td colspan="6" class="derecha" style="font-size:15px">TOTAL</td><td class="derecha" style="font-size:15px">Q {{ factura.total|floatformat:2 }}</td></tr>
+      <tr><td colspan="6" class="derecha muted" style="font-weight:400">IVA incluido en el total (12 %)</td><td class="derecha muted" style="font-weight:400">Q {{ factura.monto_iva|floatformat:2 }}</td></tr>
     </tfoot>
   </table>
 </section>

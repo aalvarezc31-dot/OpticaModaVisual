@@ -394,6 +394,60 @@
             body { background: white; }
             .panel { box-shadow: none; border: 0; }
         }
+        /* Accesos rápidos */
+        .accesos-rapidos {
+            display: flex;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .accesos-rapidos a {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 7px 13px;
+            border-radius: 8px;
+            background: var(--azul);
+            color: #fff;
+            font-size: 13.5px;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .accesos-rapidos a:hover { background: var(--azul-hover); }
+
+        /* Botón volver arriba */
+        .volver-arriba {
+            position: fixed;
+            right: 22px;
+            bottom: 22px;
+            width: 44px;
+            height: 44px;
+            border: 0;
+            border-radius: 50%;
+            background: var(--azul);
+            color: #fff;
+            font-size: 17px;
+            cursor: pointer;
+            box-shadow: 0 6px 18px rgba(23, 71, 133, .3);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: opacity .2s, transform .2s, visibility .2s;
+            z-index: 50;
+        }
+
+        .volver-arriba.visible { opacity: 1; visibility: visible; transform: none; }
+        .volver-arriba:hover { background: var(--azul-hover); }
+
+        /* Listas con búsqueda: <select data-buscable="placeholder"> */
+        .buscable-filtro { margin-bottom: 6px; }
+
+        @media print {
+            .accesos-rapidos, .volver-arriba { display: none !important; }
+        }
     </style>
 
     {% block estilos %}{% endblock %}
@@ -499,6 +553,17 @@
     </header>
 
     <main>
+        {% if 'clientes' in permisos or 'citas' in permisos %}
+        <nav class="accesos-rapidos" aria-label="Accesos rápidos">
+            {% if 'clientes' in permisos %}
+            <a href="{% url 'registrar_cliente' %}"><i class="fa-solid fa-plus"></i> Crear Cliente</a>
+            {% endif %}
+            {% if 'citas' in permisos %}
+            <a href="{% url 'registrar_cita' %}"><i class="fa-solid fa-plus"></i> Crear Cita</a>
+            {% endif %}
+        </nav>
+        {% endif %}
+
         {% for message in messages %}
             <div class="mensaje {{ message.tags }}" role="status">
                 {{ message }}
@@ -507,6 +572,10 @@
 
         {% block contenido %}{% endblock %}
     </main>
+
+    <button type="button" class="volver-arriba" id="volverArriba" aria-label="Volver arriba" title="Volver arriba">
+        <i class="fa-solid fa-arrow-up"></i>
+    </button>
 
     <script>
         const botonMenu = document.getElementById("menuToggle");
@@ -535,6 +604,48 @@
         document.querySelectorAll("dialog [data-cerrar]").forEach(function (boton) {
             boton.addEventListener("click", function () {
                 boton.closest("dialog").close();
+            });
+        });
+
+        // Botón "Volver arriba": aparece al bajar y sube con desplazamiento suave
+        const volverArriba = document.getElementById("volverArriba");
+        function revisarDesplazamiento() {
+            volverArriba.classList.toggle("visible", window.scrollY > 300);
+        }
+        window.addEventListener("scroll", revisarDesplazamiento, {passive: true});
+        revisarDesplazamiento();
+        volverArriba.addEventListener("click", function () {
+            window.scrollTo({top: 0, behavior: "smooth"});
+        });
+
+        // Listas con búsqueda en tiempo real: <select data-buscable="Texto de ayuda">
+        // Filtra las opciones mientras se escribe y selecciona la primera coincidencia.
+        function normalizar(texto) {
+            return texto.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+        }
+        document.querySelectorAll("select[data-buscable]").forEach(function (lista) {
+            const filtro = document.createElement("input");
+            filtro.type = "search";
+            filtro.className = "buscable-filtro";
+            filtro.placeholder = lista.dataset.buscable || "Buscar…";
+            filtro.setAttribute("aria-label", filtro.placeholder);
+            filtro.autocomplete = "off";
+            lista.parentNode.insertBefore(filtro, lista);
+
+            const opciones = Array.from(lista.options);
+            filtro.addEventListener("input", function () {
+                const buscado = normalizar(filtro.value.trim());
+                const anterior = lista.value;
+                lista.replaceChildren(...opciones.filter(function (opcion) {
+                    return !opcion.value || !buscado || normalizar(opcion.text).includes(buscado);
+                }));
+                const coincidencias = Array.from(lista.options).filter(function (o) { return o.value; });
+                if (buscado && coincidencias.length && !coincidencias.some(function (o) { return o.value === anterior; })) {
+                    lista.value = coincidencias[0].value;
+                }
+                if (lista.value !== anterior) {
+                    lista.dispatchEvent(new Event("change", {bubbles: true}));
+                }
             });
         });
     </script>

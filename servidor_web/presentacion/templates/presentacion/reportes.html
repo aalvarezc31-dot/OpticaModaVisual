@@ -2,31 +2,47 @@
 {% block titulo %}Reportes y analítica | Óptica Moda Visual{% endblock %}
 {% block estilos %}
 <style>
-.kpis-6{grid-template-columns:repeat(3,minmax(0,1fr))}
-.grafica{position:relative;height:280px}
-.grafica.baja{height:240px}
+/* Filtro de fechas */
+.filtro{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:12px}
+.filtro label{display:block;font-size:12px;font-weight:600;color:var(--gris);margin-bottom:4px}
+.filtro input[type=date]{width:auto;padding:7px 9px}
+.rapidos{display:flex;gap:6px;flex-wrap:wrap}
+.rapidos a{padding:6px 10px;border-radius:7px;background:var(--azul-suave);color:var(--azul);font-size:12.5px;font-weight:600;text-decoration:none}
+.rapidos a.activo{background:var(--azul);color:#fff}
+/* KPIs compactos: una sola franja para que las gráficas queden a la vista */
+.kpis-compactos{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.kpis-compactos .kpi{padding:7px 10px;border-radius:10px}
+.kpis-compactos .kpi small{font-size:11px;line-height:1.2;display:block}
+.kpis-compactos .kpi strong{font-size:15.5px;margin-top:2px;line-height:1.25}
+.panel.grafico{padding:12px 14px;margin-bottom:0}
+.panel.grafico > h2{font-size:15px;margin-bottom:6px}
+.grafica{position:relative;height:250px}
+.grafica.baja{height:210px}
 .sin-datos{display:flex;align-items:center;justify-content:center;height:100%;color:var(--gris);text-align:center}
 .exportables{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .exportable{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--borde);border-radius:10px}
 .exportable strong{font-size:14px}
-@media(max-width:760px){.kpis-6,.exportables{grid-template-columns:1fr}}
+@media(max-width:1100px){.kpis-compactos{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:760px){.kpis-compactos,.exportables{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 {% endblock %}
 {% block contenido %}
-<div class="pagina-cabecera">
-  <div><h1><i class="fa-solid fa-chart-line"></i> Reportes y analítica</h1><p class="subtitulo">Indicadores del negocio, gráficas interactivas y reportes exportables a Excel o CSV.</p></div>
-  <form method="get" class="botones no-imprimir">
-    <select name="dias" onchange="this.form.submit()" aria-label="Periodo">
-      <option value="7" {% if dias == 7 %}selected{% endif %}>Últimos 7 días</option>
-      <option value="30" {% if dias == 30 %}selected{% endif %}>Últimos 30 días</option>
-      <option value="90" {% if dias == 90 %}selected{% endif %}>Últimos 90 días</option>
-      <option value="365" {% if dias == 365 %}selected{% endif %}>Último año</option>
-    </select>
-    <button class="btn" type="button" onclick="window.print()"><i class="fa-solid fa-print"></i> Imprimir / PDF</button>
-  </form>
+<div class="pagina-cabecera" style="margin-bottom:10px">
+  <div><h1><i class="fa-solid fa-chart-line"></i> Reportes y analítica</h1>
+  <p class="subtitulo">Del {{ desde|date:"d/m/Y" }} al {{ hasta|date:"d/m/Y" }} · {{ dias }} día{{ dias|pluralize }}</p></div>
+  <button class="btn no-imprimir" type="button" onclick="window.print()"><i class="fa-solid fa-print"></i> Imprimir / PDF</button>
 </div>
 
-<section class="kpis kpis-6">
+<form method="get" class="filtro no-imprimir" id="filtroFechas">
+  <div><label for="desde">Fecha inicio</label><input type="date" id="desde" name="desde" value="{{ desde|date:'Y-m-d' }}" required></div>
+  <div><label for="hasta">Fecha fin</label><input type="date" id="hasta" name="hasta" value="{{ hasta|date:'Y-m-d' }}" required></div>
+  <button class="btn btn-azul btn-sm" type="submit" style="padding:9px 14px"><i class="fa-solid fa-filter"></i> Aplicar</button>
+  <div class="rapidos" aria-label="Periodos rápidos">
+    {% for d in periodos %}<a href="?dias={{ d }}" class="{% if dias == d %}activo{% endif %}">{% if d == 365 %}Último año{% else %}{{ d }} días{% endif %}</a>{% endfor %}
+  </div>
+</form>
+
+<section class="kpis-compactos">
   <div class="kpi"><small>Vendido en el periodo</small><strong>Q {{ total_periodo|floatformat:2 }}</strong><small>{{ ventas_periodo }} venta(s)</small></div>
   <div class="kpi"><small>Ticket promedio</small><strong>Q {{ ticket_promedio|floatformat:2 }}</strong><small>Por venta</small></div>
   <div class="kpi"><small>Saldo por cobrar</small><strong>Q {{ saldo_total|floatformat:2 }}</strong><small>{{ saldos|length }} venta(s) con saldo</small></div>
@@ -35,27 +51,27 @@
   <div class="kpi"><small>Citas del periodo</small><strong>{{ total_citas }}</strong><small>{{ citas_atendidas }} atendida(s)</small></div>
 </section>
 
-<div class="grid-2">
-  <section class="panel">
+<div class="grid-2" style="gap:12px">
+  <section class="panel grafico">
     <h2><i class="fa-solid fa-chart-line"></i> Ventas diarias</h2>
     <div class="grafica"><canvas id="graficaDiarias" aria-label="Ventas diarias"></canvas></div>
   </section>
-  <section class="panel">
+  <section class="panel grafico">
     <h2><i class="fa-solid fa-chart-pie"></i> Ventas por categoría</h2>
     <div class="grafica"><canvas id="graficaCategorias" aria-label="Ventas por categoría"></canvas></div>
   </section>
 </div>
 
-<div class="grid-3" style="margin-top:20px">
-  <section class="panel">
+<div class="grid-3" style="margin-top:12px;gap:12px">
+  <section class="panel grafico">
     <h2><i class="fa-solid fa-trophy"></i> Productos más vendidos</h2>
     <div class="grafica baja"><canvas id="graficaProductos" aria-label="Productos más vendidos"></canvas></div>
   </section>
-  <section class="panel">
-    <h2><i class="fa-solid fa-user-tie"></i> Ventas por vendedor</h2>
-    <div class="grafica baja"><canvas id="graficaVendedores" aria-label="Ventas por vendedor"></canvas></div>
+  <section class="panel grafico">
+    <h2><i class="fa-solid fa-user-tie"></i> Ventas por agente</h2>
+    <div class="grafica baja"><canvas id="graficaAgentes" aria-label="Ventas por agente"></canvas></div>
   </section>
-  <section class="panel">
+  <section class="panel grafico">
     <h2><i class="fa-solid fa-calendar-check"></i> Citas por estado</h2>
     <div class="grafica baja"><canvas id="graficaCitas" aria-label="Citas por estado"></canvas></div>
   </section>
@@ -63,14 +79,14 @@
 
 <section class="panel no-imprimir" style="margin-top:20px">
   <h2><i class="fa-solid fa-file-export"></i> Reportes exportables</h2>
-  <p class="muted" style="margin-top:-6px">Los reportes de ventas y citas usan el periodo seleccionado arriba (últimos {{ dias }} días).</p>
+  <p class="muted" style="margin-top:-6px">Los reportes de ventas y citas usan el rango seleccionado ({{ desde|date:"d/m/Y" }} – {{ hasta|date:"d/m/Y" }}).</p>
   <div class="exportables">
     {% for nombre, titulo in reportes_exportables %}
       <div class="exportable">
         <strong>{{ titulo }}</strong>
         <div class="botones">
-          <a class="btn btn-sm btn-verde" href="{% url 'exportar_reporte' nombre %}?dias={{ dias }}"><i class="fa-solid fa-file-excel"></i> Excel</a>
-          <a class="btn btn-sm" href="{% url 'exportar_reporte' nombre %}?dias={{ dias }}&formato=csv"><i class="fa-solid fa-file-csv"></i> CSV</a>
+          <a class="btn btn-sm btn-verde" href="{% url 'exportar_reporte' nombre %}?desde={{ desde|date:'Y-m-d' }}&hasta={{ hasta|date:'Y-m-d' }}"><i class="fa-solid fa-file-excel"></i> Excel</a>
+          <a class="btn btn-sm" href="{% url 'exportar_reporte' nombre %}?desde={{ desde|date:'Y-m-d' }}&hasta={{ hasta|date:'Y-m-d' }}&formato=csv"><i class="fa-solid fa-file-csv"></i> CSV</a>
         </div>
       </div>
     {% endfor %}
@@ -124,7 +140,7 @@
   }
 
   if (typeof Chart === "undefined") {
-    ["graficaDiarias", "graficaCategorias", "graficaProductos", "graficaVendedores", "graficaCitas"]
+    ["graficaDiarias", "graficaCategorias", "graficaProductos", "graficaAgentes", "graficaCitas"]
       .forEach(id => sinDatos(id, "No se pudo cargar la librería de gráficas (¿sin internet?)."));
     return;
   }
@@ -174,15 +190,15 @@
     });
   } else { sinDatos("graficaProductos", "Todavía no hay productos vendidos."); }
 
-  // 4. Ventas por vendedor
-  if (datos.vendedores.etiquetas.length) {
-    new Chart(document.getElementById("graficaVendedores"), {
+  // 4. Ventas por agente
+  if (datos.agentes.etiquetas.length) {
+    new Chart(document.getElementById("graficaAgentes"), {
       type: "bar",
-      data: {labels: datos.vendedores.etiquetas, datasets: [{label: "Total vendido", data: datos.vendedores.montos, backgroundColor: "#2563a6"}]},
+      data: {labels: datos.agentes.etiquetas, datasets: [{label: "Total vendido", data: datos.agentes.montos, backgroundColor: "#2563a6"}]},
       options: {maintainAspectRatio: false, plugins: {legend: {display: false}, tooltip: {callbacks: {label: c => quetzales(c.raw)}}},
         scales: {y: {beginAtZero: true, ticks: {callback: v => "Q " + v}}}},
     });
-  } else { sinDatos("graficaVendedores", "Sin ventas registradas."); }
+  } else { sinDatos("graficaAgentes", "Sin ventas en el periodo."); }
 
   // 5. Citas por estado
   if (datos.citas.etiquetas.length) {

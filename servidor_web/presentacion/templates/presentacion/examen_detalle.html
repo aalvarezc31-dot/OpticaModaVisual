@@ -12,7 +12,7 @@
     {% if receta %}
       <a class="btn btn-azul" href="{% url 'ver_receta' receta.id_receta %}"><i class="fa-solid fa-prescription"></i> Ver receta</a>
     {% else %}
-      <a class="btn btn-azul" href="{% url 'registrar_receta' examen.id_examen %}"><i class="fa-solid fa-circle-plus"></i> Registrar receta</a>
+      <a class="btn btn-azul" href="{% url 'registrar_receta' examen.id_examen %}"><i class="fa-solid fa-plus"></i> Registrar receta</a>
     {% endif %}
     <a class="btn" href="{% url 'lista_examenes' %}"><i class="fa-solid fa-arrow-left"></i> Exámenes</a>
   </div>

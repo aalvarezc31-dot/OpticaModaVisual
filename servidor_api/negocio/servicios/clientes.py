@@ -6,6 +6,7 @@ from datos.repositorios import clientes as repo_clientes
 from datos.repositorios import clinica as repo_clinica
 from datos.repositorios import reportes as repo_reportes
 from datos.repositorios import ventas as repo_ventas
+from negocio import validaciones
 from negocio.excepciones import RecursoNoEncontrado, ReglaNegocioError
 
 
@@ -24,15 +25,24 @@ def obtener(id_cliente):
         raise RecursoNoEncontrado("El cliente no existe.")
 
 
-def _validar_dpi(datos, excluir_id=None):
+def _validar(datos, excluir_id=None):
+    """Campos obligatorios, formato de teléfono y correo, y DPI único."""
+    datos = dict(datos)
+    datos["nombres"] = validaciones.texto_obligatorio(datos.get("nombres"), "nombres", "El nombre", 80)
+    datos["apellidos"] = validaciones.texto_obligatorio(datos.get("apellidos"), "apellidos", "El apellido", 80)
+    datos["nit"] = validaciones.texto_obligatorio(datos.get("nit"), "nit", "El NIT", 15).upper()
+    datos["telefono"] = validaciones.telefono(datos.get("telefono"))
+    datos["email"] = validaciones.email(datos.get("email"))
+
     dpi = datos.get("dpi")
     if dpi and repo_clientes.dpi_en_uso(dpi, excluir_id):
         raise ReglaNegocioError("Ya existe un cliente con ese DPI.", campo="dpi")
+    return datos
 
 
 def registrar(datos):
     """Registra un cliente nuevo como activo con la fecha actual."""
-    _validar_dpi(datos)
+    datos = _validar(datos)
     return repo_clientes.crear(
         **datos,
         activo=True,
@@ -42,7 +52,7 @@ def registrar(datos):
 
 def actualizar(id_cliente, datos):
     obtener(id_cliente)
-    _validar_dpi(datos, excluir_id=id_cliente)
+    datos = _validar(datos, excluir_id=id_cliente)
     repo_clientes.actualizar(id_cliente, **datos)
 
 

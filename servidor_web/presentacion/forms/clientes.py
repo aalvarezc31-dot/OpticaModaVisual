@@ -3,13 +3,15 @@ from datetime import date
 
 from django import forms
 
+from presentacion import validaciones
+
 
 class ClienteForm(forms.Form):
     # Los largos máximos son los de la tabla clientes.cliente.
     dpi = forms.CharField(label="DPI", max_length=13, required=False)
     nit = forms.CharField(label="NIT", max_length=15, initial="CF")
-    nombres = forms.CharField(label="Nombres", max_length=80)
-    apellidos = forms.CharField(label="Apellidos", max_length=80)
+    nombres = forms.CharField(label="Nombres", min_length=2, max_length=80)
+    apellidos = forms.CharField(label="Apellidos", min_length=2, max_length=80)
     fecha_nacimiento = forms.DateField(
         label="Fecha de nacimiento", required=False,
         widget=forms.DateInput(attrs={"type": "date"}),
@@ -18,8 +20,10 @@ class ClienteForm(forms.Form):
         label="Género", required=False,
         choices=[("", "Seleccione"), ("M", "Masculino"), ("F", "Femenino"), ("O", "Otro")],
     )
-    telefono = forms.CharField(label="Teléfono", max_length=20, required=False)
-    email = forms.EmailField(label="Correo", max_length=120, required=False)
+    telefono = forms.CharField(label="Teléfono", max_length=20, required=False,
+                               widget=forms.TextInput(attrs=validaciones.ATTRS_TELEFONO))
+    email = forms.CharField(label="Correo", max_length=120, required=False,
+                            widget=forms.EmailInput(attrs=validaciones.ATTRS_EMAIL))
     direccion = forms.CharField(
         label="Dirección", max_length=200, required=False,
         widget=forms.Textarea(attrs={"rows": 3}),
@@ -63,14 +67,10 @@ class ClienteForm(forms.Form):
         return self.cleaned_data.get("genero") or None
 
     def clean_telefono(self):
-        telefono = (self.cleaned_data.get("telefono") or "").strip()
-        if telefono and not re.fullmatch(r"[0-9+\-\s()]{7,20}", telefono):
-            raise forms.ValidationError("Revise el número de teléfono.")
-        return telefono or None
+        return validaciones.limpiar_telefono(self.cleaned_data.get("telefono"))
 
     def clean_email(self):
-        email = (self.cleaned_data.get("email") or "").strip()
-        return email or None
+        return validaciones.limpiar_email(self.cleaned_data.get("email"))
 
     def clean_direccion(self):
         return (self.cleaned_data.get("direccion") or "").strip() or None

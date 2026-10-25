@@ -1,6 +1,6 @@
-import re
-
 from django import forms
+
+from presentacion import validaciones
 
 
 class CategoriaForm(forms.Form):
@@ -19,8 +19,10 @@ class ProveedorForm(forms.Form):
     nit = forms.CharField(label="NIT", max_length=15)
     nombre = forms.CharField(label="Nombre", max_length=120)
     contacto = forms.CharField(label="Contacto", max_length=100, required=False)
-    telefono = forms.CharField(label="Teléfono", max_length=20, required=False)
-    email = forms.EmailField(label="Correo", max_length=120, required=False)
+    telefono = forms.CharField(label="Teléfono", max_length=20, required=False,
+                               widget=forms.TextInput(attrs=validaciones.ATTRS_TELEFONO))
+    email = forms.CharField(label="Correo", max_length=120, required=False,
+                            widget=forms.EmailInput(attrs=validaciones.ATTRS_EMAIL))
     direccion = forms.CharField(
         label="Dirección", max_length=200, required=False,
         widget=forms.Textarea(attrs={"rows": 2}),
@@ -42,13 +44,10 @@ class ProveedorForm(forms.Form):
         return (self.cleaned_data.get("contacto") or "").strip() or None
 
     def clean_telefono(self):
-        telefono = (self.cleaned_data.get("telefono") or "").strip()
-        if telefono and not re.fullmatch(r"[0-9+\-\s()]{7,20}", telefono):
-            raise forms.ValidationError("Revise el número de teléfono.")
-        return telefono or None
+        return validaciones.limpiar_telefono(self.cleaned_data.get("telefono"))
 
     def clean_email(self):
-        return (self.cleaned_data.get("email") or "").strip() or None
+        return validaciones.limpiar_email(self.cleaned_data.get("email"))
 
     def clean_direccion(self):
         return (self.cleaned_data.get("direccion") or "").strip() or None

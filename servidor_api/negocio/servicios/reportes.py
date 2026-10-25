@@ -1,16 +1,18 @@
 """
 Módulo analítico: indicadores del dashboard y reportes exportables.
 
-Los datos salen de las vistas del esquema [reportes] y de consultas de
-datos/repositorios/reportes.py.
+Los reportes de un periodo se filtran por rango de fechas (desde / hasta,
+ambos inclusive). Si no se indica rango, se usan los últimos `dias` días.
 """
 from datetime import timedelta
 
 from django.utils import timezone
 
 from datos.repositorios import reportes as repo_reportes
+from negocio.excepciones import ReglaNegocioError
 
 PERIODOS = (7, 30, 90, 365)
+MAXIMO_DIAS = 3 * 366
 
 
 def normalizar_dias(dias):
@@ -21,30 +23,46 @@ def normalizar_dias(dias):
     return dias if dias in PERIODOS else 30
 
 
-def desde(dias):
-    """Primer día del periodo de `dias` días que termina hoy."""
-    return timezone.now().date() - timedelta(days=dias - 1)
+def periodo(desde=None, hasta=None, dias=None):
+    """
+    Devuelve (desde, hasta) validados.
+
+    - Sin fechas: los últimos `dias` días hasta hoy (30 por defecto).
+    - Con fechas: la fecha de inicio no puede ser posterior a la final.
+    """
+    hoy = timezone.now().date()
+    if desde is None and hasta is None:
+        return hoy - timedelta(days=normalizar_dias(dias) - 1), hoy
+
+    hasta = hasta or hoy
+    desde = desde or hasta - timedelta(days=29)
+    if desde > hasta:
+        raise ReglaNegocioError("La fecha de inicio no puede ser posterior a la fecha fin.", campo="desde")
+    if (hasta - desde).days > MAXIMO_DIAS:
+        raise ReglaNegocioError("El rango no puede ser mayor a 3 años.", campo="desde")
+    return desde, hasta
 
 
-def resumen(dias=30):
-    inicio = desde(dias)
-    diarias = repo_reportes.ventas_diarias(inicio)
+def resumen(desde, hasta):
+    diarias = repo_reportes.ventas_diarias(desde, hasta)
     saldos = repo_reportes.saldos_pendientes()
     inventario = repo_reportes.inventario_valorizado()
     total_periodo = sum((d["total_vendido"] or 0) for d in diarias)
     ventas_periodo = sum((d["cantidad_ventas"] or 0) for d in diarias)
-    citas_estado = repo_reportes.citas_por_estado(inicio)
+    citas_estado = repo_reportes.citas_por_estado(desde, hasta)
 
     return {
-        "dias": dias,
+        "desde": desde,
+        "hasta": hasta,
+        "dias": (hasta - desde).days + 1,
         "periodos": PERIODOS,
         "ventas_diarias": diarias,
         "total_periodo": total_periodo,
         "ventas_periodo": ventas_periodo,
         "ticket_promedio": (total_periodo / ventas_periodo) if ventas_periodo else 0,
-        "por_vendedor": repo_reportes.ventas_por_vendedor(),
-        "mas_vendidos": repo_reportes.productos_mas_vendidos(),
-        "por_categoria": repo_reportes.ventas_por_categoria(inicio),
+        "por_agente": repo_reportes.ventas_por_agente(desde, hasta),
+        "mas_vendidos": repo_reportes.productos_mas_vendidos(desde, hasta),
+        "por_categoria": repo_reportes.ventas_por_categoria(desde, hasta),
         "citas_estado": citas_estado,
         "total_citas": sum(c["cantidad"] for c in citas_estado),
         "citas_atendidas": sum(c["cantidad"] for c in citas_estado if c["estado"] == "ATENDIDA"),
@@ -56,9 +74,9 @@ def resumen(dias=30):
     }
 
 
-def tablero(dias=30):
-    """Indicadores + series de las gráficas del dashboard."""
-    contexto = resumen(normalizar_dias(dias))
+def tablero(desde=None, hasta=None, dias=None):
+    """Indicadores + series de las gráficas del dashboard para el periodo."""
+    contexto = resumen(*periodo(desde, hasta, dias))
     contexto["graficas"] = datos_graficas(contexto)
     return contexto
 
@@ -76,9 +94,9 @@ def datos_graficas(contexto):
             "etiquetas": [c["categoria"] for c in contexto["por_categoria"]],
             "montos": [float(c["monto"] or 0) for c in contexto["por_categoria"]],
         },
-        "vendedores": {
-            "etiquetas": [v["vendedor_nombre"] for v in contexto["por_vendedor"]],
-            "montos": [float(v["total_vendido"] or 0) for v in contexto["por_vendedor"]],
+        "agentes": {
+            "etiquetas": [a["agente_nombre"] for a in contexto["por_agente"]],
+            "montos": [float(a["total_vendido"] or 0) for a in contexto["por_agente"]],
         },
         "productos": {
             "etiquetas": [p["codigo"] + " · " + p["nombre"] for p in contexto["mas_vendidos"]],
@@ -92,29 +110,29 @@ def datos_graficas(contexto):
 
 
 # --- Reportes exportables ---
-# nombre -> (título, [(columna, encabezado)], función(dias) -> filas)
+# nombre -> (título, [(columna, encabezado)], función(desde, hasta) -> filas)
 REPORTES = {
     "ventas-diarias": (
         "Ventas diarias",
         [("fecha", "Fecha"), ("cantidad_ventas", "Ventas"), ("subtotal", "Subtotal (Q)"),
          ("descuentos", "Descuentos (Q)"), ("total_vendido", "Total (Q)")],
-        lambda dias: repo_reportes.ventas_diarias(desde(dias)),
+        lambda desde, hasta: repo_reportes.ventas_diarias(desde, hasta),
     ),
-    "ventas-por-vendedor": (
-        "Ventas por vendedor",
-        [("vendedor_nombre", "Vendedor"), ("cantidad_ventas", "Ventas"), ("total_vendido", "Total (Q)")],
-        lambda dias: repo_reportes.ventas_por_vendedor(),
+    "ventas-por-agente": (
+        "Ventas por agente",
+        [("agente_nombre", "Agente"), ("cantidad_ventas", "Ventas"), ("total_vendido", "Total (Q)")],
+        lambda desde, hasta: repo_reportes.ventas_por_agente(desde, hasta),
     ),
     "ventas-por-categoria": (
         "Ventas por categoría",
         [("categoria", "Categoría"), ("unidades", "Unidades"), ("monto", "Monto (Q)")],
-        lambda dias: repo_reportes.ventas_por_categoria(desde(dias)),
+        lambda desde, hasta: repo_reportes.ventas_por_categoria(desde, hasta),
     ),
     "productos-mas-vendidos": (
         "Productos más vendidos",
         [("codigo", "Código"), ("nombre", "Producto"), ("unidades_vendidas", "Unidades"),
          ("ingresos", "Ingresos (Q)")],
-        lambda dias: repo_reportes.productos_mas_vendidos(limite=50),
+        lambda desde, hasta: repo_reportes.productos_mas_vendidos(desde, hasta, limite=50),
     ),
     "inventario": (
         "Inventario valorizado",
@@ -122,35 +140,36 @@ REPORTES = {
          ("stock_actual", "Existencias"), ("stock_minimo", "Mínimo"), ("precio_costo", "Costo (Q)"),
          ("precio_venta", "Precio (Q)"), ("valor_costo", "Valor al costo (Q)"),
          ("valor_venta", "Valor a precio de venta (Q)")],
-        lambda dias: repo_reportes.inventario_valorizado(),
+        lambda desde, hasta: repo_reportes.inventario_valorizado(),
     ),
     "stock-bajo": (
         "Productos con stock bajo",
         [("codigo", "Código"), ("nombre", "Producto"), ("categoria", "Categoría"),
          ("proveedor", "Proveedor"), ("telefono_proveedor", "Teléfono proveedor"),
          ("stock_actual", "Existencias"), ("stock_minimo", "Mínimo")],
-        lambda dias: repo_reportes.stock_bajo(),
+        lambda desde, hasta: repo_reportes.stock_bajo(),
     ),
     "saldos-por-cobrar": (
         "Saldos por cobrar",
         [("id_venta", "Venta"), ("fecha_venta", "Fecha"), ("cliente_nombre", "Cliente"),
          ("total", "Total (Q)"), ("pagado", "Pagado (Q)"), ("saldo", "Saldo (Q)"), ("estado", "Estado")],
-        lambda dias: repo_reportes.saldos_pendientes(),
+        lambda desde, hasta: repo_reportes.saldos_pendientes(),
     ),
     "citas": (
         "Agenda de citas",
         [("fecha_hora_inicio", "Fecha y hora"), ("tipo_cita", "Tipo"), ("cliente_nombre", "Paciente"),
          ("cliente_telefono", "Teléfono"), ("usuario_atiende_nombre", "Optometrista"), ("estado", "Estado")],
-        lambda dias: repo_reportes.citas_del_periodo(desde(dias)),
+        lambda desde, hasta: repo_reportes.citas_del_periodo(desde, hasta),
     ),
 }
 
 
-def exportacion(nombre, dias):
+def exportacion(nombre, desde=None, hasta=None, dias=None):
     """Devuelve (título, encabezados, filas como listas) o None si el reporte no existe."""
     if nombre not in REPORTES:
         return None
 
+    inicio, fin = periodo(desde, hasta, dias)
     titulo, columnas, consulta = REPORTES[nombre]
-    filas = [[fila.get(columna) for columna, _ in columnas] for fila in consulta(dias)]
+    filas = [[fila.get(columna) for columna, _ in columnas] for fila in consulta(inicio, fin)]
     return titulo, [encabezado for _, encabezado in columnas], filas

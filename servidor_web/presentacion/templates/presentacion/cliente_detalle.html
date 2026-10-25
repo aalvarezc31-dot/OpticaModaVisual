@@ -9,8 +9,8 @@
   </div>
   <div class="botones">
     {% if cliente.activo %}
-    {% if 'ventas' in permisos %}<a class="btn btn-azul" href="{% url 'nueva_venta' %}?cliente={{ cliente.id_cliente }}"><i class="fa-solid fa-cart-plus"></i> Nueva venta</a>{% endif %}
-    <a class="btn" href="{% url 'registrar_cita' %}?cliente={{ cliente.id_cliente }}"><i class="fa-solid fa-calendar-plus"></i> Cita</a>
+    {% if 'ventas' in permisos %}<a class="btn btn-azul" href="{% url 'nueva_venta' %}?cliente={{ cliente.id_cliente }}"><i class="fa-solid fa-plus"></i> Nueva venta</a>{% endif %}
+    <a class="btn" href="{% url 'registrar_cita' %}?cliente={{ cliente.id_cliente }}"><i class="fa-solid fa-plus"></i> Cita</a>
     <a class="btn" href="{% url 'registrar_examen' %}?cliente={{ cliente.id_cliente }}"><i class="fa-solid fa-eye"></i> Examen</a>
     {% endif %}
     <a class="btn" href="{% url 'editar_cliente' cliente.id_cliente %}"><i class="fa-solid fa-pen"></i> Editar</a>

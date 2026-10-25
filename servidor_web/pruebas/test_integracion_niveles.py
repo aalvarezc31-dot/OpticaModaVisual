@@ -15,6 +15,7 @@ y luego, en otra terminal:
 
 Si la API no responde, las pruebas se omiten (skip) en lugar de fallar.
 """
+import json
 import os
 import re
 import urllib.request
@@ -138,6 +139,9 @@ class IntegracionNiveles(SimpleTestCase):
         self.assertIn("<strong>3</strong>", self.texto(self.web.get(f"/productos/{id_producto}/")))
         self.assertIn("CONFIRMADA", self.texto(self.web.get(f"/ventas/{id_venta}/")))
         # total = 2 x 250 + 150 (examen visual) = 650
+        r = self.web.post(f"/ventas/{id_venta}/pagos/", {"id_metodo_pago": 1, "monto": "650.00",
+                                                          "referencia": "VOU-1"})
+        self.assertIn("solo admite números", self.texto(r))
         self.web.post(f"/ventas/{id_venta}/pagos/", {"id_metodo_pago": 1, "monto": "650.00"})
         self.assertIn("PAGADA", self.texto(self.web.get(f"/ventas/{id_venta}/")))
 
@@ -149,6 +153,18 @@ class IntegracionNiveles(SimpleTestCase):
         self.assertIn("69.64", factura)  # IVA incluido: 650 - 650 / 1.12
         self.web.post(f"/ventas/{id_venta}/entregar/")
         self.assertIn("ENTREGADA", self.texto(self.web.get(f"/ventas/{id_venta}/")))
+
+        # 8. Venta en dos pasos: carrito primero, luego la orden (descuento antes del total)
+        carrito = json.dumps([{"id_producto": id_producto, "cantidad": 1, "descuento": "10"}])
+        r = self.web.post("/ventas/nueva/", {"id_cliente": id_cliente, "lineas": "[]"})
+        self.assertIn("agrega al menos un producto", self.texto(r))
+        r = self.web.post("/ventas/nueva/", {"id_cliente": id_cliente, "lineas": carrito,
+                                             "descuento": "15", "confirmar": "on"})
+        self.assertEqual(r.status_code, 302, self.texto(r))
+        detalle = self.texto(self.web.get(r["Location"]))
+        self.assertIn("CONFIRMADA", detalle)
+        self.assertIn("225.00", detalle)  # 250 - 10 por línea - 15 general
+        self.assertIn("<strong>2</strong>", self.texto(self.web.get(f"/productos/{id_producto}/")))
 
     def test_reglas_de_negocio_viajan_como_mensajes(self):
         r = self.web.post("/citas/nueva/", {"id_cliente": 1, "id_tipo_cita": 1, "fecha_hora_inicio": "2020-01-01T10:00"},
@@ -166,6 +182,12 @@ class IntegracionNiveles(SimpleTestCase):
     def test_dashboard_y_exportaciones(self):
         r = self.web.get("/reportes/?dias=30")
         self.assertIn("datos-graficas", self.texto(r))
+        r = self.web.get("/reportes/?desde=2026-01-01&hasta=2026-01-31")
+        self.assertIn("Del 01/01/2026 al 31/01/2026", self.texto(r))
+        r = self.web.get("/reportes/?desde=2026-02-01&hasta=2026-01-01")
+        self.assertIn("posterior a la fecha fin", self.texto(r))
+        r = self.web.get("/reportes/exportar/ventas-por-agente/?desde=2026-01-01&hasta=2026-01-31")
+        self.assertTrue(r.content.startswith(b"PK"))
         r = self.web.get("/reportes/exportar/inventario/")
         self.assertEqual(r["Content-Type"], "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
         self.assertTrue(r.content.startswith(b"PK"))  # un .xlsx es un ZIP

@@ -24,6 +24,7 @@ from datos.repositorios import facturas as repo_facturas
 from datos.repositorios import inventario as repo_inventario
 from datos.repositorios import productos as repo_productos
 from datos.repositorios import ventas as repo_ventas
+from negocio import validaciones
 from negocio.excepciones import RecursoNoEncontrado, ReglaNegocioError, desde_error_bd
 from negocio.servicios import sesion
 
@@ -90,7 +91,7 @@ def opciones_nueva_venta():
 
 
 def crear(user, datos):
-    vendedor = sesion.usuario_actual(user)
+    agente = sesion.usuario_actual(user)
 
     try:
         cliente = repo_clientes.obtener(datos["id_cliente"])
@@ -118,8 +119,8 @@ def crear(user, datos):
         cliente_nombre=f"{cliente.nombres} {cliente.apellidos}",
         cliente_nit=cliente.nit or "CF",
         cliente_direccion=cliente.direccion or None,
-        id_vendedor=vendedor.id_usuario,
-        vendedor_nombre=sesion.nombre_completo(vendedor),
+        id_vendedor=agente.id_usuario,          # columna de la BD: agente que vende
+        vendedor_nombre=sesion.nombre_completo(agente),
         id_receta=id_receta or None,
         fecha_venta=timezone.now(),
         subtotal=Decimal("0"),
@@ -132,6 +133,24 @@ def crear(user, datos):
 
 # --- Detalle de la venta ---
 
+def desglose(lineas, descuento_general):
+    """
+    Importes de una venta o factura: bruto (cantidad x precio), descuentos por
+    línea, descuento general y total. Cada `linea` necesita cantidad,
+    precio_unitario y descuento.
+    """
+    bruto = sum((l.cantidad * l.precio_unitario for l in lineas), Decimal("0"))
+    descuento_lineas = sum((l.descuento for l in lineas), Decimal("0"))
+    descuento_general = descuento_general or Decimal("0")
+    return {
+        "bruto": bruto,
+        "descuento_lineas": descuento_lineas,
+        "descuento_general": descuento_general,
+        "descuento_total": descuento_lineas + descuento_general,
+        "total": bruto - descuento_lineas - descuento_general,
+    }
+
+
 def ficha(id_venta):
     venta = obtener(id_venta)
     metodos = repo_ventas.mapa_metodos()
@@ -142,10 +161,12 @@ def ficha(id_venta):
     pagado = repo_ventas.total_pagado(id_venta)
     factura = repo_facturas.de_venta(id_venta)
     receta = repo_clinica.obtener_receta(venta.id_receta) if venta.id_receta else None
+    lineas = list(repo_ventas.lineas(id_venta))
 
     return {
         "venta": venta,
-        "lineas": repo_ventas.lineas(id_venta),
+        "lineas": lineas,
+        "desglose": desglose(lineas, venta.descuento),
         "pagos": pagos,
         "pagado": pagado,
         "saldo": (venta.total or 0) - pagado,
@@ -158,6 +179,36 @@ def ficha(id_venta):
         "puede_anular": venta.estado in (PENDIENTE, CONFIRMADA, PAGADA),
         "puede_facturar": venta.estado in ESTADOS_FACTURABLES and factura is None,
     }
+
+
+def crear_con_productos(user, datos, lineas, descuento=Decimal("0"), confirmar_al_crear=False):
+    """
+    Flujo de venta en dos pasos: el carrito (`lineas`) se arma primero y
+    luego se crea la venta con todo en UNA transacción: si una línea no
+    cumple una regla, no queda nada guardado.
+
+    Cada línea: {"id_producto", "cantidad", "descuento", "precio_unitario"}.
+    """
+    if not lineas:
+        raise ReglaNegocioError("Agrega al menos un producto o servicio antes de crear la venta.",
+                                campo="lineas")
+
+    with transaction.atomic():
+        venta = crear(user, datos)
+        for linea in lineas:
+            agregar_producto(
+                venta.id_venta,
+                linea["id_producto"],
+                linea["cantidad"],
+                linea.get("descuento") or Decimal("0"),
+                linea.get("precio_unitario"),
+            )
+        if descuento:
+            aplicar_descuento(venta.id_venta, descuento)
+        if confirmar_al_crear:
+            confirmar(user, venta.id_venta)
+
+    return obtener(venta.id_venta)
 
 
 def agregar_producto(id_venta, id_producto, cantidad, descuento=Decimal("0"),
@@ -326,13 +377,15 @@ def registrar_pago(user, id_venta, id_metodo_pago, monto, referencia=""):
             f"El monto supera el saldo pendiente (Q {saldo:.2f}).", campo="monto"
         )
 
+    referencia = validaciones.voucher(referencia)
+
     try:
         with transaction.atomic():
             repo_ventas.crear_pago(
                 id_venta=id_venta,
                 id_metodo_pago=id_metodo_pago,
                 monto=monto,
-                referencia=(referencia or "").strip() or None,
+                referencia=referencia,
                 id_usuario=usuario.id_usuario,
                 fecha_pago=timezone.now(),
             )

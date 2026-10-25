@@ -1,0 +1,177 @@
+{% extends "presentacion/base.html" %}
+{% block titulo %}Nueva venta | Óptica Moda Visual{% endblock %}
+{% block estilos %}
+<style>
+.paso{display:flex;align-items:center;gap:10px}
+.paso .numero{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--azul);color:#fff;font-size:14px;font-weight:700}
+.paso.inactivo .numero{background:#c7d3e3}
+.agregar-grid{display:grid;grid-template-columns:minmax(0,3fr) 90px 120px 120px auto;gap:12px;align-items:end}
+.agregar-grid label{display:block;font-weight:600;font-size:13px;margin-bottom:6px;color:#34445a}
+.totales td{border:0;padding:5px 12px}
+.totales tr.total td{font-size:17px;font-weight:700;border-top:2px solid var(--borde);padding-top:9px}
+.desc{color:var(--rojo)}
+@media(max-width:900px){.agregar-grid{grid-template-columns:1fr 1fr}.agregar-grid > :first-child{grid-column:1/-1}}
+</style>
+{% endblock %}
+{% block contenido %}
+<div class="pagina-cabecera">
+  <div>
+    <h1><i class="fa-solid fa-plus"></i> Nueva venta</h1>
+    <p class="subtitulo">Primero agrega los productos o servicios; después indica el cliente y crea la compra.</p>
+  </div>
+  <a class="btn" href="{% url 'lista_ventas' %}"><i class="fa-solid fa-arrow-left"></i> Ventas</a>
+</div>
+
+<form method="post" id="formVenta" novalidate>
+  {% csrf_token %}
+  {{ form.lineas }}
+  {% if form.non_field_errors %}<div class="mensaje error">{{ form.non_field_errors }}</div>{% endif %}
+  {% for error in form.lineas.errors %}<div class="mensaje error">{{ error }}</div>{% endfor %}
+
+  <!-- PASO 1: carrito -->
+  <section class="panel">
+    <h2 class="paso"><span class="numero">1</span> Agrega los productos</h2>
+    <div class="agregar-grid">
+      <div>
+        <label for="selProducto">Producto o servicio</label>
+        <select id="selProducto" data-buscable="Buscar por código o nombre…">
+          <option value="">Selecciona un producto o servicio</option>
+          {% for p in catalogo %}
+            <option value="{{ p.id }}">{{ p.codigo }} · {{ p.nombre }} · Q {{ p.precio }}{% if p.servicio %} · servicio{% else %} · stock {{ p.stock }}{% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div><label for="inCantidad">Cantidad</label><input type="number" id="inCantidad" min="1" value="1"></div>
+      <div><label for="inPrecio">Precio (Q)</label><input type="number" id="inPrecio" min="0" step="0.01" placeholder="De lista" disabled title="Solo los servicios permiten cambiar el precio"></div>
+      <div><label for="inDescuento">Descuento (Q)</label><input type="number" id="inDescuento" min="0" step="0.01" value="0"></div>
+      <div><button type="button" class="btn btn-azul" id="btnAgregar"><i class="fa-solid fa-plus"></i> Agregar</button></div>
+    </div>
+    <p class="errorlist" id="errorCarrito" role="alert"></p>
+
+    <div class="tabla-wrap" style="margin-top:6px"><table>
+      <thead><tr><th>Producto</th><th class="derecha">Cantidad</th><th class="derecha">Precio</th><th class="derecha">Importe</th><th class="derecha">Descuento</th><th class="derecha">Subtotal</th><th></th></tr></thead>
+      <tbody id="cuerpoCarrito"><tr><td colspan="7" class="vacio">El carrito está vacío.</td></tr></tbody>
+    </table></div>
+  </section>
+
+  <!-- PASO 2: datos de la compra -->
+  <section class="panel" id="paso2">
+    <h2 class="paso inactivo" id="tituloPaso2"><span class="numero">2</span> Crea la compra</h2>
+    <div class="grid-2">
+      <div>
+        <div class="form-grid" style="grid-template-columns:1fr">
+          {% for field in form %}{% if field.name != "lineas" and field.name != "confirmar" %}
+          <p>
+            <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+            {{ field }}
+            {% if field.help_text %}<span class="helptext">{{ field.help_text }}</span>{% endif %}
+            {% for error in field.errors %}<span class="errorlist">{{ error }}</span>{% endfor %}
+          </p>
+          {% endif %}{% endfor %}
+        </div>
+      </div>
+      <div>
+        <h3 style="margin:0 0 8px;color:var(--azul)">Resumen</h3>
+        <table class="totales">
+          <tr><td>Importe bruto</td><td class="derecha" id="totBruto">Q 0.00</td></tr>
+          <tr><td>Descuento por línea</td><td class="derecha desc" id="totDescLineas">- Q 0.00</td></tr>
+          <tr><td>Descuento general</td><td class="derecha desc" id="totDescGeneral">- Q 0.00</td></tr>
+          <tr class="total"><td>Total</td><td class="derecha" id="totTotal">Q 0.00</td></tr>
+        </table>
+        <p style="margin-top:16px"><label class="check" style="display:flex;gap:8px;align-items:center">{{ form.confirmar }} {{ form.confirmar.label }}</label></p>
+        <div class="acciones">
+          <button class="btn btn-azul" type="submit" id="btnCrear" disabled><i class="fa-solid fa-plus"></i> Crear venta</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</form>
+
+{{ catalogo|json_script:"catalogo-venta" }}
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  const catalogo = JSON.parse(document.getElementById("catalogo-venta").textContent);
+  const porId = Object.fromEntries(catalogo.map(p => [String(p.id), p]));
+  const campoLineas = document.getElementById("id_lineas");
+  const sel = document.getElementById("selProducto"), cant = document.getElementById("inCantidad");
+  const precio = document.getElementById("inPrecio"), desc = document.getElementById("inDescuento");
+  const cuerpo = document.getElementById("cuerpoCarrito"), error = document.getElementById("errorCarrito");
+  const descGeneral = document.getElementById("id_descuento"), btnCrear = document.getElementById("btnCrear");
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+  const q = n => "Q " + Number(n).toLocaleString("es-GT", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+  let carrito = [];
+  try { carrito = JSON.parse(campoLineas.value || "[]"); } catch (e) { carrito = []; }
+
+  sel.addEventListener("change", function () {
+    const p = porId[sel.value];
+    precio.disabled = !(p && p.servicio);
+    precio.value = p && p.servicio ? p.precio : "";
+  });
+
+  document.getElementById("btnAgregar").addEventListener("click", function () {
+    error.textContent = "";
+    const p = porId[sel.value];
+    const cantidad = parseInt(cant.value, 10), descuento = parseFloat(desc.value || "0");
+    const unitario = p && p.servicio && precio.value !== "" ? parseFloat(precio.value) : (p ? parseFloat(p.precio) : 0);
+    if (!p) { error.textContent = "Selecciona un producto o servicio."; return; }
+    if (!(cantidad >= 1)) { error.textContent = "La cantidad debe ser 1 o más."; return; }
+    if (descuento < 0 || unitario < 0) { error.textContent = "Precio y descuento no pueden ser negativos."; return; }
+    const existente = carrito.find(l => String(l.id_producto) === String(p.id));
+    const total = cantidad + (existente ? existente.cantidad : 0);
+    if (!p.servicio && total > p.stock) { error.textContent = `Stock insuficiente: hay ${p.stock} disponibles.`; return; }
+    if (descuento > cantidad * unitario) { error.textContent = "El descuento no puede ser mayor que el importe."; return; }
+    if (existente) {
+      if (p.servicio && Number(existente.precio_unitario ?? p.precio) !== unitario) {
+        error.textContent = "Ese servicio ya está en el carrito con otro precio; quítalo primero."; return;
+      }
+      existente.cantidad = total;
+      existente.descuento = (Number(existente.descuento) + descuento).toFixed(2);
+    } else {
+      carrito.push({id_producto: p.id, cantidad: cantidad, descuento: descuento.toFixed(2),
+                    precio_unitario: p.servicio ? unitario.toFixed(2) : null});
+    }
+    cant.value = 1; desc.value = 0;
+    pintar();
+  });
+
+  cuerpo.addEventListener("click", function (e) {
+    const boton = e.target.closest("[data-quitar]");
+    if (!boton) return;
+    carrito.splice(Number(boton.dataset.quitar), 1);
+    pintar();
+  });
+  descGeneral.addEventListener("input", pintar);
+
+  function pintar() {
+    let bruto = 0, descLineas = 0;
+    cuerpo.innerHTML = "";
+    carrito.forEach(function (l, i) {
+      const p = porId[String(l.id_producto)] || {codigo: "?", nombre: "Producto no disponible", precio: 0};
+      const unitario = l.precio_unitario !== null && l.precio_unitario !== undefined ? Number(l.precio_unitario) : Number(p.precio);
+      const importe = unitario * l.cantidad, d = Number(l.descuento || 0);
+      bruto += importe; descLineas += d;
+      const fila = document.createElement("tr");
+      fila.innerHTML = `<td>${esc(p.codigo)} · ${esc(p.nombre)}${p.servicio ? " <small>(servicio)</small>" : ""}</td>
+        <td class="derecha">${l.cantidad}</td><td class="derecha">${q(unitario)}</td><td class="derecha">${q(importe)}</td>
+        <td class="derecha desc">${d ? "- " + q(d) : "—"}</td><td class="derecha">${q(importe - d)}</td>
+        <td class="derecha"><button type="button" class="btn btn-sm btn-peligro" data-quitar="${i}" title="Quitar"><i class="fa-solid fa-trash"></i></button></td>`;
+      cuerpo.appendChild(fila);
+    });
+    if (!carrito.length) cuerpo.innerHTML = '<tr><td colspan="7" class="vacio">El carrito está vacío.</td></tr>';
+    const general = Math.min(Number(descGeneral.value || 0), Math.max(bruto - descLineas, 0));
+    document.getElementById("totBruto").textContent = q(bruto);
+    document.getElementById("totDescLineas").textContent = "- " + q(descLineas);
+    document.getElementById("totDescGeneral").textContent = "- " + q(general);
+    document.getElementById("totTotal").textContent = q(bruto - descLineas - general);
+    campoLineas.value = JSON.stringify(carrito);
+    btnCrear.disabled = !carrito.length;
+    document.getElementById("tituloPaso2").classList.toggle("inactivo", !carrito.length);
+  }
+  pintar();
+})();
+</script>
+{% endblock %}

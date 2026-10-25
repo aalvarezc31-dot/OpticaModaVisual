@@ -28,13 +28,25 @@ admin.site.site_title = "Óptica Moda Visual"
 admin.site.index_title = "Panel administrativo"
 
 
+# El rol se guarda como VENDEDOR en la base; en el sistema se llama "Agente".
+NOMBRE_VISIBLE_ROL = {"VENDEDOR": "AGENTE"}
+
+
+def nombre_rol(nombre):
+    return NOMBRE_VISIBLE_ROL.get((nombre or "").upper(), nombre)
+
+
 def _opciones_rol():
-    return [(r.id_rol, r.nombre) for r in Rol.objects.order_by("nombre")]
+    return [(r.id_rol, nombre_rol(r.nombre)) for r in Rol.objects.order_by("nombre")]
 
 
 @admin.register(Rol)
 class RolAdmin(admin.ModelAdmin):
-    list_display = ["nombre", "descripcion", "cantidad_usuarios"]
+    list_display = ["nombre_visible", "descripcion", "cantidad_usuarios"]
+
+    @admin.display(description="Rol", ordering="nombre")
+    def nombre_visible(self, rol):
+        return nombre_rol(rol.nombre)
     search_fields = ["nombre"]
     ordering = ["id_rol"]
 
@@ -140,7 +152,8 @@ class CuentaLoginAdmin(UserAdmin):
 
     @admin.display(description="Rol en el sistema")
     def rol_sistema(self, cuenta):
-        return servicio_usuarios.rol_de_cuenta(cuenta) or "— sin usuario del sistema —"
+        rol = servicio_usuarios.rol_de_cuenta(cuenta)
+        return nombre_rol(rol) if rol else "— sin usuario del sistema —"
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)

@@ -4,7 +4,7 @@
 <div class="pagina-cabecera">
   <div>
     <h1><i class="fa-solid fa-receipt"></i> Venta #{{ venta.id_venta }} <span class="estado e-{{ venta.estado|lower }}" style="font-size:14px;vertical-align:middle">{{ venta.estado }}</span></h1>
-    <p class="subtitulo">{{ venta.fecha_venta|date:"d/m/Y H:i" }} · Vendedor: {{ venta.vendedor_nombre }}</p>
+    <p class="subtitulo">{{ venta.fecha_venta|date:"d/m/Y H:i" }} · Agente: {{ venta.agente_nombre }}</p>
   </div>
   <div class="botones">
     {% if puede_confirmar %}
@@ -47,8 +47,9 @@
   <section class="panel">
     <h2><i class="fa-solid fa-calculator"></i> Totales</h2>
     <table>
-      <tr><td>Subtotal</td><td class="derecha">Q {{ venta.subtotal|floatformat:2 }}</td></tr>
-      <tr><td>Descuento</td><td class="derecha">- Q {{ venta.descuento|floatformat:2 }}</td></tr>
+      <tr><td>Importe bruto</td><td class="derecha">Q {{ desglose.bruto|floatformat:2 }}</td></tr>
+      <tr><td>Descuento por línea</td><td class="derecha" style="color:var(--rojo)">- Q {{ desglose.descuento_lineas|floatformat:2 }}</td></tr>
+      <tr><td>Descuento general</td><td class="derecha" style="color:var(--rojo)">- Q {{ desglose.descuento_general|floatformat:2 }}</td></tr>
       <tr><td><strong>Total</strong></td><td class="derecha"><strong>Q {{ venta.total|floatformat:2 }}</strong></td></tr>
       <tr><td>Pagado</td><td class="derecha">Q {{ pagado|floatformat:2 }}</td></tr>
       <tr><td><strong>Saldo</strong></td><td class="derecha"><strong style="color:{% if saldo > 0 %}var(--rojo){% else %}var(--verde){% endif %}">Q {{ saldo|floatformat:2 }}</strong></td></tr>

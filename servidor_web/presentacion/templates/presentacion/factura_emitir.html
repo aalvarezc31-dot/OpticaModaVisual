@@ -1,0 +1,30 @@
+{% extends "presentacion/base.html" %}
+{% block titulo %}Facturar venta #{{ venta.id_venta }} | Óptica Moda Visual{% endblock %}
+{% block contenido %}
+<div class="pagina-cabecera">
+  <div><h1><i class="fa-solid fa-plus"></i> Facturar venta #{{ venta.id_venta }}</h1>
+  <p class="subtitulo">Revisa el desglose antes de emitir. El IVA (12 %) ya está incluido en los precios.</p></div>
+  <a class="btn" href="{% url 'detalle_venta' venta.id_venta %}"><i class="fa-solid fa-arrow-left"></i> Venta</a>
+</div>
+<div class="grid-2">
+  <section class="panel">
+    <h2><i class="fa-solid fa-receipt"></i> Desglose de la factura</h2>
+    <table>
+      <tr><td>Importe bruto</td><td class="derecha">Q {{ desglose.bruto|floatformat:2 }}</td></tr>
+      <tr><td>Descuento por línea</td><td class="derecha" style="color:var(--rojo)">- Q {{ desglose.descuento_lineas|floatformat:2 }}</td></tr>
+      <tr><td>Descuento general</td><td class="derecha" style="color:var(--rojo)">- Q {{ desglose.descuento_general|floatformat:2 }}</td></tr>
+      <tr><td><strong>Descuento aplicado</strong></td><td class="derecha" style="color:var(--rojo)"><strong>- Q {{ desglose.descuento_total|floatformat:2 }}</strong></td></tr>
+      <tr><td><strong style="font-size:16px">Total a facturar</strong></td><td class="derecha"><strong style="font-size:16px">Q {{ desglose.total|floatformat:2 }}</strong></td></tr>
+      <tr><td class="muted">IVA incluido (12 %)</td><td class="derecha muted">Q {{ desglose.iva|floatformat:2 }}</td></tr>
+    </table>
+  </section>
+  <section class="panel">
+    <h2><i class="fa-solid fa-id-card"></i> Datos del receptor</h2>
+    <form method="post">
+      {% csrf_token %}
+      {% include "presentacion/_campos.html" %}
+      <div class="acciones"><button class="btn btn-azul" type="submit"><i class="fa-solid fa-plus"></i> Emitir factura</button></div>
+    </form>
+  </section>
+</div>
+{% endblock %}

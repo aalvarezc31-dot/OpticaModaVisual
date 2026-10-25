@@ -32,9 +32,17 @@ def a_json(valor):
     raise TypeError(f"No se puede enviar un {type(valor).__name__} por la API.")
 
 
+# Nombres del contrato de la API cuando difieren de la columna de SQL Server.
+# (La base conserva vendedor_*; el sistema llama "Agente" a ese rol.)
+ALIAS_CAMPOS = {
+    "id_vendedor": "id_agente",
+    "vendedor_nombre": "agente_nombre",
+}
+
+
 def _registro(instancia):
     """Un registro del ORM como diccionario con todas sus columnas (incluidas las calculadas)."""
-    datos = {campo.attname: a_json(getattr(instancia, campo.attname))
+    datos = {ALIAS_CAMPOS.get(campo.attname, campo.attname): a_json(getattr(instancia, campo.attname))
              for campo in instancia._meta.concrete_fields}
     datos["pk"] = a_json(instancia.pk)
     return datos

@@ -1,12 +1,22 @@
-from decimal import Decimal
+import json
+from decimal import Decimal, InvalidOperation
 
 from django import forms
 
+from presentacion import validaciones
 from presentacion.servicios import ventas
 
 
 class NuevaVentaForm(forms.Form):
-    id_cliente = forms.TypedChoiceField(label="Cliente", coerce=int)
+    """
+    Paso 2 de la venta: los datos de la compra. El carrito del paso 1 llega
+    en `lineas` como JSON (lo arma la página con JavaScript).
+    """
+    lineas = forms.CharField(widget=forms.HiddenInput, required=False)
+    id_cliente = forms.TypedChoiceField(
+        label="Cliente", coerce=int,
+        widget=forms.Select(attrs={"data-buscable": "Buscar cliente por nombre o NIT…"}),
+    )
     id_receta = forms.TypedChoiceField(
         label="Receta óptica (opcional)", coerce=int, required=False, empty_value=None,
         help_text="Déjalo en «Sin receta» para cobrar consultas, lentes de sol, accesorios, etc.",
@@ -18,6 +28,13 @@ class NuevaVentaForm(forms.Form):
     observaciones = forms.CharField(
         label="Observaciones", max_length=200, required=False,
         widget=forms.Textarea(attrs={"rows": 2}),
+    )
+    descuento = forms.DecimalField(
+        label="Descuento general (Q)", max_digits=12, decimal_places=2, min_value=0,
+        required=False, initial=Decimal("0"),
+    )
+    confirmar = forms.BooleanField(
+        label="Confirmar la venta al crearla (descuenta el inventario)", required=False, initial=True,
     )
 
     def __init__(self, *args, **kwargs):
@@ -38,8 +55,43 @@ class NuevaVentaForm(forms.Form):
         ]
 
 
+    def clean_descuento(self):
+        return self.cleaned_data.get("descuento") or Decimal("0")
+
+    def clean_lineas(self):
+        """Valida el carrito: [{id_producto, cantidad, descuento, precio_unitario}, ...]."""
+        try:
+            crudas = json.loads(self.cleaned_data.get("lineas") or "[]")
+        except ValueError:
+            raise forms.ValidationError("El carrito no es válido. Vuelve a agregar los productos.")
+
+        if not isinstance(crudas, list) or not crudas:
+            raise forms.ValidationError("Paso 1: agrega al menos un producto o servicio al carrito.")
+
+        lineas = []
+        try:
+            for cruda in crudas:
+                linea = {
+                    "id_producto": int(cruda["id_producto"]),
+                    "cantidad": int(cruda["cantidad"]),
+                    "descuento": Decimal(str(cruda.get("descuento") or "0")),
+                    "precio_unitario": (Decimal(str(cruda["precio_unitario"]))
+                                        if cruda.get("precio_unitario") not in (None, "") else None),
+                }
+                if linea["cantidad"] < 1 or linea["descuento"] < 0 or (
+                        linea["precio_unitario"] is not None and linea["precio_unitario"] < 0):
+                    raise ValueError
+                lineas.append(linea)
+        except (KeyError, TypeError, ValueError, InvalidOperation):
+            raise forms.ValidationError("Hay una línea del carrito con datos inválidos.")
+        return lineas
+
+
 class LineaVentaForm(forms.Form):
-    id_producto = forms.TypedChoiceField(label="Producto", coerce=int)
+    id_producto = forms.TypedChoiceField(
+        label="Producto", coerce=int,
+        widget=forms.Select(attrs={"data-buscable": "Buscar por código o nombre…"}),
+    )
     cantidad = forms.IntegerField(label="Cantidad", min_value=1, initial=1)
     precio_unitario = forms.DecimalField(
         label="Precio (Q)", max_digits=12, decimal_places=2,
@@ -82,7 +134,8 @@ class PagoForm(forms.Form):
         label="Monto (Q)", max_digits=12, decimal_places=2, min_value=Decimal("0.01")
     )
     referencia = forms.CharField(
-        label="Referencia (boleta, autorización...)", max_length=60, required=False
+        label="Referencia del voucher (solo números)", max_length=60, required=False,
+        widget=forms.TextInput(attrs=validaciones.ATTRS_VOUCHER),
     )
 
     def __init__(self, *args, **kwargs):
@@ -90,6 +143,9 @@ class PagoForm(forms.Form):
         self.fields["id_metodo_pago"].choices = [("", "Selecciona")] + [
             (m.id_metodo_pago, m.nombre.capitalize()) for m in ventas.metodos_de_pago()
         ]
+
+    def clean_referencia(self):
+        return validaciones.limpiar_voucher(self.cleaned_data.get("referencia"))
 
 
 class MotivoForm(forms.Form):

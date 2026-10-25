@@ -23,6 +23,7 @@ ANULADA = repo_facturas.ANULADA
 ESTADOS = [(EMITIDA, "Emitida"), (ANULADA, "Anulada")]
 
 CENTAVO = Decimal("0.01")
+IVA = Decimal("1.12")  # el precio ya incluye el 12 %
 
 
 def estados():
@@ -42,11 +43,23 @@ def obtener(id_factura):
 
 def ficha(id_factura):
     factura = obtener(id_factura)
+    lineas = list(repo_facturas.lineas(id_factura))
     return {
         "factura": factura,
-        "lineas": repo_facturas.lineas(id_factura),
+        "lineas": lineas,
+        # El descuento general ya va repartido en las líneas de la factura.
+        "desglose": ventas.desglose(lineas, Decimal("0")),
         "venta": ventas.obtener(factura.id_venta),
     }
+
+
+def vista_previa(id_venta):
+    """Importes que tendrá la factura de una venta, para mostrarlos antes de emitirla."""
+    venta = ventas.obtener(id_venta)
+    desglose = ventas.desglose(list(repo_ventas.lineas(id_venta)), venta.descuento)
+    total = desglose["total"]
+    desglose["iva"] = (total - total / IVA).quantize(CENTAVO, rounding=ROUND_HALF_UP)
+    return desglose
 
 
 def datos_receptor(id_venta):

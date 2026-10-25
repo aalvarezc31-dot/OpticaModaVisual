@@ -1,6 +1,7 @@
 """Catálogos de inventario: categorías, marcas y proveedores."""
 from datos.models import CategoriaProducto, Marca, Proveedor
 from datos.repositorios import inventario as repo_inventario
+from negocio import validaciones
 from negocio.excepciones import RecursoNoEncontrado, ReglaNegocioError
 
 
@@ -70,6 +71,12 @@ def obtener_proveedor(id_proveedor):
 
 
 def guardar_proveedor(datos, id_proveedor=None):
+    datos = dict(datos)
+    datos["nit"] = validaciones.texto_obligatorio(datos.get("nit"), "nit", "El NIT", 15).upper()
+    datos["nombre"] = validaciones.texto_obligatorio(datos.get("nombre"), "nombre", "El nombre", 120)
+    datos["telefono"] = validaciones.telefono(datos.get("telefono"))
+    datos["email"] = validaciones.email(datos.get("email"))
+
     if repo_inventario.proveedor_nit_en_uso(datos["nit"], id_proveedor):
         raise ReglaNegocioError("Ya existe un proveedor con ese NIT.", campo="nit")
 

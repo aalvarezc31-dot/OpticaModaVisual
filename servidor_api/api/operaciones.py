@@ -46,14 +46,14 @@ OPERACIONES = {
     }),
     "ventas": (ventas, "ventas", {
         "estados": False, "buscar": False, "obtener": False, "opciones_nueva_venta": False,
-        "crear": CON_USUARIO, "ficha": False, "agregar_producto": False, "quitar_linea": False,
+        "crear": CON_USUARIO, "crear_con_productos": CON_USUARIO, "ficha": False, "agregar_producto": False, "quitar_linea": False,
         "aplicar_descuento": False, "confirmar": CON_USUARIO, "registrar_pago": CON_USUARIO,
         "entregar": False, "anular": CON_USUARIO, "metodos_de_pago": False,
         "cobrar_cita": CON_USUARIO, "productos_para_venta": False,
     }),
     "facturas": (facturas, "facturas", {
         "estados": False, "buscar": False, "obtener": False, "ficha": False,
-        "datos_receptor": False, "emitir": CON_USUARIO, "anular": False,
+        "datos_receptor": False, "vista_previa": False, "emitir": CON_USUARIO, "anular": False,
     }),
     "reportes": (reportes, "reportes", {
         "tablero": False, "exportacion": False,

@@ -107,6 +107,13 @@ class ConfirmarYPagar(BaseVentas):
         with self.assertRaisesMessage(ReglaNegocioError, "supera el saldo"):
             ventas.registrar_pago(usuario_web(), 1, 1, Decimal("100.01"))
 
+    def test_voucher_solo_numeros(self):
+        self.con_venta(estado="CONFIRMADA", total=Decimal("100.00"))
+        self.repo_ventas.total_pagado.return_value = Decimal("0")
+        with self.assertRaisesMessage(ReglaNegocioError, "solo admite números"):
+            ventas.registrar_pago(usuario_web(), 1, 2, Decimal("100"), referencia="VOU-77")
+        self.repo_ventas.crear_pago.assert_not_called()
+
     def test_no_se_cobra_venta_pendiente(self):
         with self.assertRaisesMessage(ReglaNegocioError, "No se puede cobrar"):
             ventas.registrar_pago(usuario_web(), 1, 1, Decimal("10"))
@@ -153,3 +160,42 @@ class CobrarCita(BaseVentas):
     def test_servicio_segun_tipo_de_cita(self):
         self.assertEqual(ventas.SERVICIO_POR_TIPO_CITA["EXAMEN VISUAL"], "SV-001")
         self.assertNotIn("ENTREGA DE LENTES", ventas.SERVICIO_POR_TIPO_CITA)
+
+
+class Desglose(SimpleTestCase):
+    def test_descuentos_antes_del_total(self):
+        lineas = [registro(cantidad=2, precio_unitario=Decimal("250"), descuento=Decimal("20")),
+                  registro(cantidad=1, precio_unitario=Decimal("150"), descuento=Decimal("0"))]
+        d = ventas.desglose(lineas, Decimal("30"))
+        self.assertEqual((d["bruto"], d["descuento_lineas"], d["descuento_general"]),
+                         (Decimal("650"), Decimal("20"), Decimal("30")))
+        self.assertEqual((d["descuento_total"], d["total"]), (Decimal("50"), Decimal("600")))
+
+
+class VentaEnDosPasos(BaseVentas):
+    def setUp(self):
+        super().setUp()
+        self.crear = mock.patch(f"{M}.crear", return_value=venta()).start()
+        self.agregar = mock.patch(f"{M}.agregar_producto").start()
+        self.descuento = mock.patch(f"{M}.aplicar_descuento").start()
+        self.confirmar = mock.patch(f"{M}.confirmar").start()
+
+    def test_exige_carrito(self):
+        with self.assertRaisesMessage(ReglaNegocioError, "al menos un producto"):
+            ventas.crear_con_productos(usuario_web(), {"id_cliente": 7}, [])
+        self.crear.assert_not_called()
+
+    def test_crea_agrega_descuenta_y_confirma(self):
+        lineas = [{"id_producto": 10, "cantidad": 2, "descuento": Decimal("5")},
+                  {"id_producto": 11, "cantidad": 1, "precio_unitario": Decimal("150")}]
+        ventas.crear_con_productos(usuario_web(), {"id_cliente": 7}, lineas, Decimal("10"),
+                                   confirmar_al_crear=True)
+        self.assertEqual(self.agregar.call_count, 2)
+        self.agregar.assert_any_call(1, 11, 1, Decimal("0"), Decimal("150"))
+        self.descuento.assert_called_once_with(1, Decimal("10"))
+        self.confirmar.assert_called_once()
+
+    def test_sin_confirmar_queda_pendiente(self):
+        ventas.crear_con_productos(usuario_web(), {"id_cliente": 7}, [{"id_producto": 10, "cantidad": 1}])
+        self.descuento.assert_not_called()
+        self.confirmar.assert_not_called()

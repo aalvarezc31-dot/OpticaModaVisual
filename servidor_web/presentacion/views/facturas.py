@@ -41,21 +41,20 @@ def emitir_factura(request, id_venta):
     else:
         form = EmitirFacturaForm(initial=facturas.datos_receptor(id_venta))
 
-    return render(request, "presentacion/form_simple.html", {
+    return render(request, "presentacion/factura_emitir.html", {
         "form": form,
-        "titulo": f"Facturar venta #{venta.id_venta}",
-        "icono": "fa-file-invoice-dollar",
-        "volver_id": venta.id_venta,
-        "volver": "detalle_venta",
-        "boton": "Emitir factura",
-        "ayuda": f"Total a facturar: Q {venta.total:.2f}. El IVA (12 %) se calcula automáticamente.",
+        "venta": venta,
+        "desglose": facturas.vista_previa(id_venta),
     })
 
 
 @login_required
 def detalle_factura(request, id_factura):
+    contexto = facturas.ficha(id_factura)
+    for linea in contexto["lineas"]:
+        linea.importe = linea.cantidad * linea.precio_unitario
     return render(request, "presentacion/factura_detalle.html", {
-        **facturas.ficha(id_factura),
+        **contexto,
         "form_anular": MotivoForm(),
     })
 

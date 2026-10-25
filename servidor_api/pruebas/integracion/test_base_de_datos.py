@@ -179,12 +179,12 @@ class FlujoClinico(BaseIntegracion):
 
 class ReportesSobreVistas(BaseIntegracion):
     def test_tablero_y_todos_los_reportes_exportables(self):
-        tablero = reportes.tablero(365)
-        for clave in ("ventas_diarias", "por_categoria", "citas_estado", "graficas", "saldo_total"):
+        tablero = reportes.tablero(dias=365)
+        for clave in ("ventas_diarias", "por_categoria", "por_agente", "citas_estado", "graficas", "saldo_total"):
             self.assertIn(clave, tablero)
         for nombre in reportes.REPORTES:
             with self.subTest(reporte=nombre):
-                titulo, encabezados, filas = reportes.exportacion(nombre, 365)
+                titulo, encabezados, filas = reportes.exportacion(nombre, tablero["desde"], tablero["hasta"])
                 self.assertTrue(titulo)
                 self.assertTrue(all(len(fila) == len(encabezados) for fila in filas))
 

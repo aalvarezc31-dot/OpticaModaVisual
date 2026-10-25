@@ -28,14 +28,25 @@ def lista_ventas(request):
 
 @login_required
 def nueva_venta(request):
+    """
+    Venta en dos pasos:
+      1. Se arma el carrito (productos, cantidades, descuentos).
+      2. Se eligen cliente y receta y se crea (y opcionalmente confirma) la compra.
+    """
     if request.method == "POST":
         form = NuevaVentaForm(request.POST)
 
         if form.is_valid():
+            datos = dict(form.cleaned_data)
+            lineas = datos.pop("lineas")
+            descuento = datos.pop("descuento")
+            confirmar = datos.pop("confirmar")
             try:
-                venta = ventas.crear(form.cleaned_data)
+                venta = ventas.crear_con_productos(datos, lineas, descuento, confirmar)
                 messages.success(
-                    request, f"Venta #{venta.id_venta} creada. Agrega los productos."
+                    request,
+                    f"Venta #{venta.id_venta} creada y confirmada. Ya puedes registrar el pago."
+                    if confirmar else f"Venta #{venta.id_venta} creada como PENDIENTE."
                 )
                 return redirect("detalle_venta", venta.id_venta)
             except ReglaNegocioError as error:
@@ -46,14 +57,12 @@ def nueva_venta(request):
             iniciales["id_cliente"] = int(request.GET["cliente"])
         form = NuevaVentaForm(initial=iniciales)
 
-    return render(request, "presentacion/form_simple.html", {
-        "form": form,
-        "titulo": "Nueva venta",
-        "icono": "fa-cart-plus",
-        "volver": "lista_ventas",
-        "boton": "Crear venta",
-        "ayuda": "Después de crearla podrás agregar productos, confirmarla y registrar pagos.",
-    })
+    catalogo = [
+        {"id": p.id_producto, "codigo": p.codigo, "nombre": p.nombre,
+         "precio": f"{p.precio_venta:.2f}", "servicio": bool(p.es_servicio), "stock": p.stock_actual}
+        for p in ventas.productos_para_venta()
+    ]
+    return render(request, "presentacion/venta_nueva.html", {"form": form, "catalogo": catalogo})
 
 
 def _render_detalle(request, id_venta, **formularios):

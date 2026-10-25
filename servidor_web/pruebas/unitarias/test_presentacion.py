@@ -32,13 +32,21 @@ class FormularioCliente(SimpleTestCase):
             "telefono": {"telefono": "abc"},
             "fecha_nacimiento": {"fecha_nacimiento": (date.today() + timedelta(days=1)).isoformat()},
             "email": {"email": "no-es-correo"},
+            "telefono_corto": {"telefono": "5555-12"},
+            "email_sin_dominio": {"email": "ana@optica"},
             "nombres": {"nombres": "   "},
         }
-        for campo, datos in casos.items():
-            with self.subTest(campo=campo):
+        for caso, datos in casos.items():
+            campo = next(iter(datos))
+            with self.subTest(caso=caso):
                 form = self.form(**datos)
                 self.assertFalse(form.is_valid())
                 self.assertIn(campo, form.errors)
+
+    def test_html_valida_en_el_navegador(self):
+        html = str(self.form()["telefono"]) + str(self.form()["email"])
+        self.assertIn('pattern="', html)
+        self.assertIn('minlength="8"', html)
 
 
 class FormularioReceta(SimpleTestCase):

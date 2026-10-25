@@ -8,7 +8,7 @@ from django.utils import timezone
 from datos.repositorios import usuarios as repo_usuarios
 
 ROL_ADMINISTRADOR = "ADMINISTRADOR"
-ROL_POR_DEFECTO = "VENDEDOR"
+ROL_POR_DEFECTO = "VENDEDOR"  # en pantalla se muestra como "Agente"
 
 
 def rol_de_cuenta(user):
@@ -32,7 +32,7 @@ def enlazar_cuenta(user):
     """
     Crea el usuario del sistema de una cuenta de login, o actualiza sus datos.
 
-    Si es nuevo recibe el rol ADMINISTRADOR (superusuarios) o VENDEDOR; el rol
+    Si es nuevo recibe el rol ADMINISTRADOR (superusuarios) o AGENTE; el rol
     se cambia después desde el panel. Devuelve (usuario, creado).
     """
     existente = repo_usuarios.buscar_por_username(user.get_username())

@@ -3,7 +3,7 @@
 {% block contenido %}
 <div class="pagina-cabecera">
   <div>
-    <h1><i class="fa-solid fa-{% if producto %}pen{% else %}circle-plus{% endif %}"></i> {% if producto %}Editar producto{% else %}Nuevo producto{% endif %}</h1>
+    <h1><i class="fa-solid fa-{% if producto %}pen{% else %}plus{% endif %}"></i> {% if producto %}Editar producto{% else %}Nuevo producto{% endif %}</h1>
     <p class="subtitulo">{% if producto %}{{ producto.codigo }} · {{ producto.nombre }}{% else %}Registra monturas, lentes, accesorios o servicios.{% endif %}</p>
   </div>
 </div>

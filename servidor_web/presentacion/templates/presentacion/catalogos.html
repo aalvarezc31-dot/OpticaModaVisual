@@ -12,7 +12,7 @@
       {% csrf_token %}
       {% with form=form_categoria %}{% include "presentacion/_campos.html" %}{% endwith %}
       <div class="acciones" style="margin-top:0;margin-bottom:16px">
-        <button class="btn btn-azul" type="submit"><i class="fa-solid fa-floppy-disk"></i> {% if categoria_editando %}Guardar cambios{% else %}Agregar categoría{% endif %}</button>
+        <button class="btn btn-azul" type="submit"><i class="fa-solid fa-{% if categoria_editando %}floppy-disk{% else %}plus{% endif %}"></i> {% if categoria_editando %}Guardar cambios{% else %}Agregar categoría{% endif %}</button>
         {% if categoria_editando %}<a class="btn" href="{% url 'catalogos_inventario' %}">Cancelar</a>{% endif %}
       </div>
     </form>
@@ -35,7 +35,7 @@
       {% csrf_token %}
       {% with form=form_marca %}{% include "presentacion/_campos.html" %}{% endwith %}
       <div class="acciones" style="margin-top:0;margin-bottom:16px">
-        <button class="btn btn-azul" type="submit"><i class="fa-solid fa-floppy-disk"></i> {% if marca_editando %}Guardar cambios{% else %}Agregar marca{% endif %}</button>
+        <button class="btn btn-azul" type="submit"><i class="fa-solid fa-{% if marca_editando %}floppy-disk{% else %}plus{% endif %}"></i> {% if marca_editando %}Guardar cambios{% else %}Agregar marca{% endif %}</button>
         {% if marca_editando %}<a class="btn" href="{% url 'catalogos_inventario' %}">Cancelar</a>{% endif %}
       </div>
     </form>

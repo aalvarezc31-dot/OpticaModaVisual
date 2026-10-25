@@ -6,6 +6,7 @@ from unittest import mock
 from django.test import SimpleTestCase
 
 from negocio.excepciones import ReglaNegocioError
+from negocio import validaciones
 from negocio.servicios import clientes, facturas, panel, productos, reportes
 from pruebas.utilidades import producto, registro, usuario_web, venta
 
@@ -102,14 +103,55 @@ class Clientes(SimpleTestCase):
     def test_dpi_duplicado(self, repo):
         repo.dpi_en_uso.return_value = True
         with self.assertRaisesMessage(ReglaNegocioError, "DPI"):
-            clientes.registrar({"dpi": "1234567890123"})
+            clientes.registrar({"dpi": "1234567890123", "nombres": "Ana", "apellidos": "López", "nit": "CF"})
         repo.crear.assert_not_called()
 
     @mock.patch("negocio.servicios.clientes.repo_clientes")
     def test_registra_activo(self, repo):
         repo.dpi_en_uso.return_value = False
-        clientes.registrar({"dpi": None, "nombres": "Ana"})
-        self.assertTrue(repo.crear.call_args.kwargs["activo"])
+        clientes.registrar({"dpi": None, "nombres": "Ana", "apellidos": "López", "nit": "cf"})
+        datos = repo.crear.call_args.kwargs
+        self.assertTrue(datos["activo"])
+        self.assertEqual(datos["nit"], "CF")
+
+    @mock.patch("negocio.servicios.clientes.repo_clientes")
+    def test_obligatorios_telefono_y_correo(self, repo):
+        repo.dpi_en_uso.return_value = False
+        base = {"nombres": "Ana", "apellidos": "López", "nit": "CF"}
+        casos = {
+            "apellidos": {"apellidos": "  "},
+            "telefono": {"telefono": "5555"},
+            "email": {"email": "ana@correo"},
+        }
+        for campo, datos in casos.items():
+            with self.subTest(campo=campo):
+                with self.assertRaises(ReglaNegocioError) as error:
+                    clientes.registrar({**base, **datos})
+                self.assertEqual(error.exception.campo, campo)
+        repo.crear.assert_not_called()
+
+
+class Validaciones(SimpleTestCase):
+    def test_telefono(self):
+        for valido in ("5555-1234", "+502 5555 1234", "(502) 5555-1234"):
+            self.assertEqual(validaciones.telefono(valido), valido)
+        self.assertIsNone(validaciones.telefono("  "))
+        for invalido in ("5555-12", "abc12345678", "1234567890123456"):
+            with self.subTest(telefono=invalido), self.assertRaises(ReglaNegocioError):
+                validaciones.telefono(invalido)
+
+    def test_email(self):
+        self.assertEqual(validaciones.email("ana.lopez+1@optica.com.gt"), "ana.lopez+1@optica.com.gt")
+        for invalido in ("ana@", "ana@optica", "ana lopez@optica.com", "@optica.com"):
+            with self.subTest(email=invalido), self.assertRaises(ReglaNegocioError):
+                validaciones.email(invalido)
+
+    def test_voucher_solo_numeros(self):
+        self.assertEqual(validaciones.voucher(" 00123456 "), "00123456")
+        self.assertIsNone(validaciones.voucher(""))
+        for invalido in ("ABC123", "12-34", "12 34", "1.5"):
+            with self.subTest(voucher=invalido), self.assertRaises(ReglaNegocioError):
+                validaciones.voucher(invalido)
 
 
 class PanelYReportes(SimpleTestCase):
@@ -126,13 +168,26 @@ class PanelYReportes(SimpleTestCase):
         self.assertEqual(reportes.normalizar_dias("13"), 30)
         self.assertEqual(reportes.normalizar_dias(None), 30)
 
-    def test_exportacion_respeta_columnas(self):
-        self.assertIsNone(reportes.exportacion("no-existe", 30))
-        with mock.patch("negocio.servicios.reportes.repo_reportes.ventas_por_vendedor",
-                        return_value=[{"vendedor_nombre": "Ana", "cantidad_ventas": 2, "total_vendido": Decimal("90")}]):
-            titulo, encabezados, filas = reportes.exportacion("ventas-por-vendedor", 30)
-        self.assertEqual(titulo, "Ventas por vendedor")
-        self.assertEqual(encabezados, ["Vendedor", "Ventas", "Total (Q)"])
+    def test_periodo_por_rango_de_fechas(self):
+        self.assertEqual(reportes.periodo(date(2026, 1, 1), date(2026, 1, 31)),
+                         (date(2026, 1, 1), date(2026, 1, 31)))
+        desde, hasta = reportes.periodo(dias=7)
+        self.assertEqual((hasta - desde).days, 6)
+        with self.assertRaisesMessage(ReglaNegocioError, "posterior a la fecha fin"):
+            reportes.periodo(date(2026, 2, 1), date(2026, 1, 1))
+        with self.assertRaisesMessage(ReglaNegocioError, "3 años"):
+            reportes.periodo(date(2020, 1, 1), date(2026, 1, 1))
+
+    def test_exportacion_respeta_columnas_y_rango(self):
+        self.assertIsNone(reportes.exportacion("no-existe", dias=30))
+        filas_bd = [{"agente_nombre": "Ana", "cantidad_ventas": 2, "total_vendido": Decimal("90")}]
+        with mock.patch("negocio.servicios.reportes.repo_reportes.ventas_por_agente",
+                        return_value=filas_bd) as consulta:
+            titulo, encabezados, filas = reportes.exportacion(
+                "ventas-por-agente", date(2026, 1, 1), date(2026, 1, 31))
+        consulta.assert_called_once_with(date(2026, 1, 1), date(2026, 1, 31))
+        self.assertEqual(titulo, "Ventas por agente")
+        self.assertEqual(encabezados, ["Agente", "Ventas", "Total (Q)"])
         self.assertEqual(filas, [["Ana", 2, Decimal("90")]])
 
     def test_hay_al_menos_dos_reportes_exportables(self):
